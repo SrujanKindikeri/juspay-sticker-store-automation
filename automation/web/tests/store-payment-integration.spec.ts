@@ -10,6 +10,28 @@ import {
 
 const API_BASE_URL = process.env.API_BASE_URL || 'http://127.0.0.1:8001';
 
+async function verifyEmailViaApi(request: any, email: string) {
+  const sendRes = await request.post(`${API_BASE_URL}/api/v1/email-verification/send-otp`, {
+    data: { email },
+  });
+  expect(sendRes.ok()).toBeTruthy();
+  const sendData = await sendRes.json();
+
+  const verRes = await request.post(`${API_BASE_URL}/api/v1/email-verification/verify-otp`, {
+    data: {
+      session_id: sendData.session_id,
+      email,
+      otp: sendData.simulated_otp,
+    },
+  });
+  expect(verRes.ok()).toBeTruthy();
+  const verData = await verRes.json();
+  return {
+    email_verification_session_id: sendData.session_id,
+    email_verification_token: verData.verification_token,
+  };
+}
+
 test.describe('Phase 8: Physical Sticker Store & JUSPAY Gateway Integration', () => {
   test.beforeEach(async ({ page }) => {
     // Clear cart before each test
@@ -509,6 +531,7 @@ test.describe('Phase 8: Physical Sticker Store & JUSPAY Gateway Integration', ()
   test('9. Multiple payment requests for an already paid order are rejected with HTTP 409', async ({
     page,
   }) => {
+    const emailProof = await verifyEmailViaApi(page.request, 'conflict@example.com');
     // 1. Place store order via API
     const orderRes = await page.request.post(`${API_BASE_URL}/api/v1/store/orders`, {
       data: {
@@ -522,6 +545,7 @@ test.describe('Phase 8: Physical Sticker Store & JUSPAY Gateway Integration', ()
           state: 'Karnataka',
           pincode: '560001',
         },
+        ...emailProof,
       },
     });
     expect(orderRes.ok()).toBeTruthy();
@@ -582,6 +606,7 @@ test.describe('Phase 8: Physical Sticker Store & JUSPAY Gateway Integration', ()
   test('10. Tampered order amounts submitted to payment gateway are rejected with HTTP 400', async ({
     page,
   }) => {
+    const emailProof = await verifyEmailViaApi(page.request, 'tamper@example.com');
     // 1. Create order for STK-001 (total: ₹149.00)
     const orderRes = await page.request.post(`${API_BASE_URL}/api/v1/store/orders`, {
       data: {
@@ -595,6 +620,7 @@ test.describe('Phase 8: Physical Sticker Store & JUSPAY Gateway Integration', ()
           state: 'Karnataka',
           pincode: '560001',
         },
+        ...emailProof,
       },
     });
     expect(orderRes.ok()).toBeTruthy();
@@ -627,6 +653,7 @@ test.describe('Phase 8: Physical Sticker Store & JUSPAY Gateway Integration', ()
   test('11. Unauthorized access to order details without valid token is blocked with 401/403', async ({
     page,
   }) => {
+    const emailProof = await verifyEmailViaApi(page.request, 'security@example.com');
     // 1. Place an order to obtain order_id and order_token
     const orderRes = await page.request.post(`${API_BASE_URL}/api/v1/store/orders`, {
       data: {
@@ -640,6 +667,7 @@ test.describe('Phase 8: Physical Sticker Store & JUSPAY Gateway Integration', ()
           state: 'Karnataka',
           pincode: '560001',
         },
+        ...emailProof,
       },
     });
     expect(orderRes.ok()).toBeTruthy();

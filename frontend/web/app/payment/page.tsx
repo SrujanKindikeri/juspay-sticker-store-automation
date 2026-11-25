@@ -39,6 +39,8 @@ export default function CheckoutPage() {
   const [health, setHealth] = useState<BackendHealth | null>(null);
   const [healthLoading, setHealthLoading] = useState<boolean>(true);
   const [processingLabel, setProcessingLabel] = useState<string>('');
+  const [retryingReceipt, setRetryingReceipt] = useState<boolean>(false);
+  const [receiptRetryMsg, setReceiptRetryMsg] = useState<string>('');
   const submitPaymentLockRef = useRef<boolean>(false);
 
   // Form states
@@ -477,10 +479,68 @@ export default function CheckoutPage() {
     }
   };
 
-  const handleDownloadReceipt = () => {
+  const handleRetryReceiptEmail = async () => {
+    const ordId = completedPayment?.order_id || paymentResult?.order_id || orderInfo.orderId;
+    if (!ordId.startsWith('STK-ORD-')) return;
+    setRetryingReceipt(true);
+    setReceiptRetryMsg('');
+    try {
+      const tokenQuery = orderToken ? `?token=${encodeURIComponent(orderToken)}` : '';
+      const headers: Record<string, string> = orderToken ? { 'X-Order-Token': orderToken } : {};
+      const res = await fetch(`${apiUrl}/api/v1/store/orders/${ordId}/retry-receipt${tokenQuery}`, {
+        method: 'POST',
+        headers,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.detail || 'Unable to resend receipt email.');
+      }
+      setStoreOrder((prev: any) =>
+        prev
+          ? {
+              ...prev,
+              receipt_email_status: data.receipt_email_status,
+              receipt_email_sent_at: data.receipt_email_sent_at,
+              receipt_email_attempts: data.receipt_email_attempts,
+            }
+          : prev
+      );
+      setReceiptRetryMsg(data.message || 'Receipt email delivered successfully.');
+    } catch (err: any) {
+      setReceiptRetryMsg(err?.message || 'Email retry failed. Please try again.');
+    } finally {
+      setRetryingReceipt(false);
+    }
+  };
+
+  const handleDownloadReceipt = async () => {
     const txnId = completedPayment?.transaction_id || paymentResult?.transaction_id || 'N/A';
     const refId = completedPayment?.payment_reference || paymentResult?.payment_reference || 'N/A';
     const ordId = completedPayment?.order_id || paymentResult?.order_id || orderInfo.orderId;
+
+    // Prefer authoritative backend PDF receipt for verified store orders
+    if (ordId.startsWith('STK-ORD-') && orderToken) {
+      try {
+        const res = await fetch(
+          `${apiUrl}/api/v1/store/orders/${ordId}/receipt-pdf?token=${encodeURIComponent(orderToken)}`
+        );
+        if (res.ok) {
+          const pdfBlob = await res.blob();
+          const url = URL.createObjectURL(pdfBlob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `Stickora-Receipt-${ordId}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          return;
+        }
+      } catch {
+        // Fallback to client text receipt if PDF endpoint unreachable
+      }
+    }
+
     const amt = (completedPayment?.amount || paymentResult?.amount || orderInfo.amount).toFixed(2);
     const curr = completedPayment?.currency || paymentResult?.currency || orderInfo.currency;
     const method = completedPayment?.payment_method || paymentResult?.payment_method || selectedMethod.toUpperCase();
@@ -811,6 +871,39 @@ export default function CheckoutPage() {
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+
+                {orderInfo.orderId.startsWith('STK-ORD-') && (
+                  <div className="receipt-email-status-box" data-testid="receipt-email-status-box">
+                    <div className="receipt-email-status-text" data-testid="receipt-email-status">
+                      {storeOrder?.receipt_email_status === 'SENT' ? (
+                        <span>
+                          ✉️ Confirmation email with PDF receipt sent to{' '}
+                          <strong>{storeOrder?.delivery?.email || 'your verified email'}</strong>
+                        </span>
+                      ) : (
+                        <span>
+                          ⚠️ Confirmation email delivery status: <strong>{storeOrder?.receipt_email_status || 'PENDING'}</strong>
+                        </span>
+                      )}
+                    </div>
+                    {storeOrder?.receipt_email_status !== 'SENT' && (
+                      <button
+                        type="button"
+                        className="btn-resend-email-otp"
+                        onClick={handleRetryReceiptEmail}
+                        disabled={retryingReceipt}
+                        data-testid="retry-receipt-email-button"
+                      >
+                        {retryingReceipt ? 'Retrying Email...' : '↻ Retry Receipt Email'}
+                      </button>
+                    )}
+                    {receiptRetryMsg && (
+                      <p style={{ margin: '0.4rem 0 0', fontSize: '0.8rem', color: '#475569' }}>
+                        {receiptRetryMsg}
+                      </p>
+                    )}
                   </div>
                 )}
 

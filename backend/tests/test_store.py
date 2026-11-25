@@ -1,5 +1,6 @@
 import pytest
 from fastapi.testclient import TestClient
+from tests.conftest import verify_test_email
 
 
 def test_get_store_categories(client: TestClient):
@@ -106,7 +107,8 @@ def test_create_store_order_authoritative_pricing(client: TestClient):
             "city": "Bengaluru",
             "state": "Karnataka",
             "pincode": "560038"
-        }
+        },
+        **verify_test_email(client, "rohan.mehra@example.com"),
     }
     response = client.post("/api/v1/store/orders", json=payload)
     assert response.status_code == 201
@@ -144,7 +146,8 @@ def test_create_store_order_free_shipping(client: TestClient):
             "city": "Hyderabad",
             "state": "Telangana",
             "pincode": "500081"
-        }
+        },
+        **verify_test_email(client, "pooja.h@example.com"),
     }
     response = client.post("/api/v1/store/orders", json=payload)
     assert response.status_code == 201
@@ -176,7 +179,8 @@ def test_create_store_order_stock_deduction(client: TestClient):
             "city": "Mumbai",
             "state": "Maharashtra",
             "pincode": "400020"
-        }
+        },
+        **verify_test_email(client, "vikram@example.com"),
     }
     order_res = client.post("/api/v1/store/orders", json=payload)
     assert order_res.status_code == 201
@@ -211,6 +215,7 @@ def test_create_store_order_insufficient_stock(client: TestClient):
     # We can pass quantity = stock + 1 if <= 50, or create order for stock then try again
     excess_qty = min(50, stock + 1)
     if excess_qty > stock:
+        payload.update(verify_test_email(client, "ananya@example.com"))
         payload["items"][0]["quantity"] = excess_qty
         res = client.post("/api/v1/store/orders", json=payload)
         assert res.status_code == 400
@@ -269,7 +274,8 @@ def test_get_store_order_by_id(client: TestClient):
             "city": "Jaipur",
             "state": "Rajasthan",
             "pincode": "302001"
-        }
+        },
+        **verify_test_email(client, "deepak.verma@example.com"),
     }
     create_res = client.post("/api/v1/store/orders", json=payload)
     assert create_res.status_code == 201
@@ -328,7 +334,8 @@ def test_phase_7_order_status_guarantee(client: TestClient):
             "city": "New Delhi",
             "state": "Delhi",
             "pincode": "110011"
-        }
+        },
+        **verify_test_email(client, "sonia.g@example.com"),
     }
     res = client.post("/api/v1/store/orders", json=payload)
     assert res.status_code == 201

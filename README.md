@@ -42,9 +42,13 @@ A Full-Stack Physical Sticker E-Commerce Platform (**Stickora — Premium Vinyl 
 - Dynamic free shipping calculator (Free Express Shipping at `₹499.00+`, otherwise `₹50.00`).
 - Empty cart state with quick category exploration pills; persisted in browser `localStorage` (`juspay_sticker_cart_v1`).
 
-### 3. Delivery Checkout (`/checkout`)
+### 3. Delivery Checkout & Customer Email Verification (`/checkout`)
 - Two-column Apple-inspired responsive checkout with product thumbnail preview and itemized breakdown.
-- Client and Pydantic server validation for Full Name, 10-digit Indian Mobile Number (`6–9...`), Email, Street Address, City, State, and 6-digit PIN Code.
+- **Customer Email OTP Verification**:
+  - Dedicated **Verify Email** flow (`EVS_...`) separate from payment OTP (`TXN_...`).
+  - Sends a cryptographically secure 6-digit OTP to the customer's email via SMTP, storing only a keyed HMAC-SHA256 hash (`email_verification_sessions`) with 5-minute TTL, max 3 incorrect attempts, max 3 resends, and 30-second cooldown.
+  - Prevents cross-email verification and enforces verified email status server-side inside `POST /api/v1/store/orders`.
+- Client and Pydantic server validation for Full Name, 10-digit Indian Mobile Number (`6–9...`), Verified Email, Street Address, City, State, and 6-digit PIN Code.
 - Synchronous duplicate-submission lock (`useRef` + disabled loading state) on **Place Order (Pending Payment)**.
 - Backend creates `StoreOrder` in PostgreSQL with initial status `PENDING_PAYMENT` and redirects directly to `/payment?order_id=...&token=...`.
 
@@ -53,14 +57,17 @@ A Full-Stack Physical Sticker E-Commerce Platform (**Stickora — Premium Vinyl 
 - Contextual forms and validation for **Credit / Debit Card**, **UPI**, and **Net Banking**.
 - Server-side authoritative amount verification against `store_orders.total_amount`.
 
-### 5. OTP Verification
-- Generates 6-digit OTP via Python `secrets`, storing only a keyed HMAC-SHA256 hash (`otp_hash`).
+### 5. Payment OTP Verification
+- Generates 6-digit payment OTP via Python `secrets`, storing only a keyed HMAC-SHA256 hash (`otp_hash`).
 - Constant-time hash comparison (`hmac.compare_digest`), 5-minute expiry, 3-attempt lockout, and 30s resend cooldown (max 3 resends).
 - In `development` mode, provides a simulation OTP helper for deterministic automation/UI demos; strictly disabled (`null`) in `production` mode.
 
-### 6. Transaction Management & Receipts
+### 6. Transaction Management, Automatic Email Receipts & Authoritative PDF
 - Enforces strict payment state transitions and updates `StoreOrder` to `PAID` **only** after backend-confirmed settlement (`POST /api/v1/payments/{id}/process` + `GET /api/v1/payments/{id}`).
-- Premium Payment Success Receipt displaying Transaction ID, Order ID, Payment Reference, Amount Paid, Payment Method, Timestamp, Delivery Address, Purchased Products, **Download Receipt** (`.txt` download), and **Continue Shopping**.
+- **Automatic Confirmation Email & PDF Receipt**:
+  - Upon confirmed `SUCCESS` payment and `PAID` order status, automatically emails `"Your Juspay Sticker Store Order Confirmation"` with an HTML summary and authoritative `reportlab`-generated **PDF Receipt** (`Stickora-Receipt-{order_id}.pdf`) to the verified customer email.
+  - Never sends receipts on `DECLINED` or `FAILED` payments, prevents duplicate receipts via row locking and `receipt_email_status`, never rolls back a `PAID` order if SMTP fails, and provides `POST /api/v1/store/orders/{order_id}/retry-receipt` + UI retry button.
+  - Customers can also download the backend-generated PDF directly from the Success Receipt (`GET /api/v1/store/orders/{order_id}/receipt-pdf`).
 - Dedicated screens for **Pending**, **Declined**, and **Failed** payments supporting safe payment retry without duplicate orders.
 
 ### 7. Security & Idempotency
@@ -69,8 +76,8 @@ A Full-Stack Physical Sticker E-Commerce Platform (**Stickora — Premium Vinyl 
 - HMAC-protected order access tokens (`X-Order-Token` / `?token=`) preventing unauthorized order/address enumeration (`401`/`403`).
 
 ### 8. Browser Automation & Testing
-- **77** backend Pytest integration/security/unit tests (`backend/tests/`).
-- **59** Playwright E2E tests in TypeScript (`automation/web/tests/`) with direct PostgreSQL assertions via `pg`.
+- **88** backend Pytest integration/security/email/PDF unit & integration tests (`backend/tests/`).
+- **61** Playwright E2E tests in TypeScript (`automation/web/tests/`) verifying browser workflows, PostgreSQL records, and live Mailpit SMTP captures.
 
 ---
 
@@ -195,12 +202,15 @@ Copy-Item frontend\web\.env.example frontend\web\.env.local
 ```
 Update `.env` with your local `POSTGRES_USER`, `POSTGRES_PASSWORD`, `DATABASE_URL`, and a random `OTP_SECRET_KEY`.
 
-### 3. Start PostgreSQL with Docker Compose
+### 3. Start PostgreSQL & Local Email Capture (Mailpit) with Docker Compose
 ```powershell
 docker compose up -d
 docker compose ps
 ```
-PostgreSQL `16-alpine` runs in container `juspay_postgres` and exposes port **`5433`** on `localhost`.
+- **PostgreSQL 16** runs in `juspay_postgres` on host port **`5433`**.
+- **Mailpit SMTP Capture** runs in `juspay_mailpit`:
+  - SMTP server: `localhost:1025` (captures all outgoing OTP and Order Confirmation + PDF emails safely without emailing real users)
+  - Web Inbox UI: `http://localhost:8025` (inspect sent HTML emails, plain-text OTPs, and PDF attachments visually)
 
 ### 4. Backend Setup & Startup (`http://127.0.0.1:8001`)
 ```powershell
@@ -243,6 +253,9 @@ Templates are tracked in [`.env.example`](.env.example) and [`frontend/web/.env.
 | `ALLOWED_ORIGINS` | Backend | Comma-separated CORS origins (`http://localhost:3001`, etc.) |
 | `OTP_SECRET_KEY` | Backend | Server HMAC-SHA256 key for OTP hashes & order access tokens |
 | `OTP_EXPIRY_MINUTES`, `OTP_MAX_ATTEMPTS`, `OTP_RESEND_COOLDOWN_SECONDS`, `OTP_MAX_RESENDS` | Backend | OTP TTL (`5`), max attempts (`3`), resend cooldown (`30s`), max resends (`3`) |
+| `EMAIL_VERIFICATION_ENABLED` | Backend | Enforces verified email status when creating store orders (`True`) |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_USE_TLS`, `SMTP_USE_SSL` | Backend | SMTP provider settings (defaults to local Mailpit `localhost:1025`; set credentials & TLS for production SMTP) |
+| `SMTP_FROM_EMAIL`, `SMTP_FROM_NAME` | Backend | Sender address and display name for OTP & confirmation receipt emails |
 | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_NAME`, `PORT` | Frontend | Backend base URL (`http://localhost:8001`), app title, Next.js port (`3001`) |
 
 ---
@@ -254,9 +267,10 @@ Full endpoint schemas, parameters, and validation rules are documented in [docs/
 Summary of implemented endpoints:
 - **Health**: `GET /health`, `GET /api/v1/health`, `GET /`
 - **Store & Products**: `GET /api/v1/store/categories`, `GET /api/v1/store/products`, `GET /api/v1/store/products/{product_id}`
-- **Orders**: `POST /api/v1/store/orders`, `GET /api/v1/store/orders/{order_id}`
+- **Email Verification**: `POST /api/v1/email-verification/send-otp`, `POST /api/v1/email-verification/verify-otp`, `GET /api/v1/email-verification/status/{session_id}`
+- **Orders & Receipts**: `POST /api/v1/store/orders`, `GET /api/v1/store/orders/{order_id}`, `POST /api/v1/store/orders/{order_id}/retry-receipt`, `GET /api/v1/store/orders/{order_id}/receipt-pdf`
 - **Payments**: `POST /api/v1/payments/initiate`, `POST /api/v1/payments/{transaction_id}/process`, `GET /api/v1/payments/{transaction_id}`, `GET /api/v1/payments`
-- **OTP**: `POST /api/v1/payments/{transaction_id}/send-otp`, `POST /api/v1/payments/{transaction_id}/verify-otp`, `POST /api/v1/payments/{transaction_id}/resend-otp`, `GET /api/v1/payments/{transaction_id}/otp-status`
+- **Payment OTP**: `POST /api/v1/payments/{transaction_id}/send-otp`, `POST /api/v1/payments/{transaction_id}/verify-otp`, `POST /api/v1/payments/{transaction_id}/resend-otp`, `GET /api/v1/payments/{transaction_id}/otp-status`
 
 ---
 
@@ -266,11 +280,11 @@ Refer to [docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md) for detailed instruction
 
 | Check / Suite | Command | Latest Observed Result |
 | :--- | :--- | :--- |
-| **Backend Pytest** | `cd backend; .\venv\Scripts\pytest.exe -v tests` | **77 passed** (`0 failed`, exit code `0`) |
+| **Backend Pytest** | `cd backend; .\venv\Scripts\pytest.exe -v tests` | **88 passed** (`0 failed`, exit code `0`) |
 | **Frontend TypeScript** | `cd frontend\web; npx tsc --noEmit` | **Passed** (exit code `0`) |
 | **Frontend Production Build** | `cd frontend\web; npm run build` | **Passed** (exit code `0`) |
 | **Playwright TypeScript** | `cd automation\web; npx tsc --noEmit` | **Passed** (exit code `0`) |
-| **Playwright E2E Suite** | `cd automation\web; npx playwright test --reporter=list` | **59 passed** (`0 failed`, exit code `0`) |
+| **Playwright E2E Suite** | `cd automation\web; npx playwright test --reporter=list` | **61 passed** (`0 failed`, exit code `0`) |
 
 ---
 

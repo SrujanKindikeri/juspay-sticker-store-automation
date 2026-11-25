@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -64,16 +64,138 @@ export default function CheckoutPage() {
   const [confirmedOrder, setConfirmedOrder] = useState<ConfirmedOrder | null>(null);
   const submitLockRef = useRef<boolean>(false);
 
+  // Customer Email OTP Verification States (independent from Payment OTP)
+  const [emailVerified, setEmailVerified] = useState<boolean>(false);
+  const [verifiedEmailAddress, setVerifiedEmailAddress] = useState<string>('');
+  const [verificationSessionId, setVerificationSessionId] = useState<string>('');
+  const [verificationToken, setVerificationToken] = useState<string>('');
+  const [emailOtpSent, setEmailOtpSent] = useState<boolean>(false);
+  const [emailOtpInput, setEmailOtpInput] = useState<string>('');
+  const [emailOtpDevCode, setEmailOtpDevCode] = useState<string>('');
+  const [sendingEmailOtp, setSendingEmailOtp] = useState<boolean>(false);
+  const [verifyingEmailOtp, setVerifyingEmailOtp] = useState<boolean>(false);
+  const [emailOtpError, setEmailOtpError] = useState<string>('');
+  const [emailOtpInfo, setEmailOtpInfo] = useState<string>('');
+  const [emailResendCooldown, setEmailResendCooldown] = useState<number>(0);
+
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+
+  useEffect(() => {
+    if (emailResendCooldown <= 0) return;
+    const timer = setTimeout(() => setEmailResendCooldown((prev) => Math.max(0, prev - 1)), 1000);
+    return () => clearTimeout(timer);
+  }, [emailResendCooldown]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+
+    if (name === 'email') {
+      const normalized = value.trim().toLowerCase();
+      if (emailVerified && normalized !== verifiedEmailAddress) {
+        setEmailVerified(false);
+        setVerifiedEmailAddress('');
+        setVerificationSessionId('');
+        setVerificationToken('');
+      }
+      if (normalized !== verifiedEmailAddress) {
+        setEmailOtpSent(false);
+        setEmailOtpInput('');
+        setEmailOtpDevCode('');
+        setEmailOtpError('');
+        setEmailOtpInfo('');
+      }
+    }
+
     if (fieldErrors[name as keyof DeliveryFormData]) {
       setFieldErrors((prev) => ({ ...prev, [name]: '' }));
     }
     if (generalError) {
       setGeneralError('');
+    }
+  };
+
+  const handleSendEmailOtp = async (isResend: boolean = false) => {
+    const cleanEmail = formData.email.trim().toLowerCase();
+    if (!/^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/.test(cleanEmail)) {
+      setFieldErrors((prev) => ({ ...prev, email: 'Please enter a valid email address before verifying.' }));
+      return;
+    }
+
+    setSendingEmailOtp(true);
+    setEmailOtpError('');
+    setEmailOtpInfo('');
+
+    try {
+      const bodyPayload: Record<string, string> = { email: cleanEmail };
+      if (isResend && verificationSessionId) {
+        bodyPayload.session_id = verificationSessionId;
+      }
+
+      const res = await fetch(`${apiUrl}/api/v1/email-verification/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyPayload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(extractApiErrorMessage(data, res.status));
+      }
+
+      setVerificationSessionId(data.session_id);
+      setEmailOtpSent(true);
+      setEmailOtpInput('');
+      setEmailOtpDevCode(data.simulated_otp || '');
+      setEmailResendCooldown(data.cooldown_seconds || 30);
+      setEmailOtpInfo(
+        isResend
+          ? `A fresh 6-digit OTP was sent to ${cleanEmail}.`
+          : `Verification OTP sent to ${cleanEmail}. Valid for 5 minutes.`
+      );
+    } catch (err: any) {
+      setEmailOtpError(err?.message || 'Unable to send email verification OTP.');
+    } finally {
+      setSendingEmailOtp(false);
+    }
+  };
+
+  const handleVerifyEmailOtp = async () => {
+    const cleanEmail = formData.email.trim().toLowerCase();
+    const cleanOtp = emailOtpInput.trim();
+    if (!/^\d{6}$/.test(cleanOtp)) {
+      setEmailOtpError('Please enter a valid 6-digit numeric email OTP.');
+      return;
+    }
+
+    setVerifyingEmailOtp(true);
+    setEmailOtpError('');
+
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/email-verification/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: verificationSessionId,
+          email: cleanEmail,
+          otp: cleanOtp,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(extractApiErrorMessage(data, res.status));
+      }
+
+      setEmailVerified(true);
+      setVerifiedEmailAddress(cleanEmail);
+      setVerificationToken(data.verification_token);
+      setEmailOtpSent(false);
+      setEmailOtpDevCode('');
+      setEmailOtpInfo('');
+      setFieldErrors((prev) => ({ ...prev, email: '' }));
+    } catch (err: any) {
+      setEmailOtpError(err?.message || 'Email OTP verification failed.');
+    } finally {
+      setVerifyingEmailOtp(false);
     }
   };
 
@@ -154,6 +276,15 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (!emailVerified || !verificationSessionId || !verificationToken) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        email: 'Please verify your email address with the 6-digit OTP before placing your order.',
+      }));
+      setGeneralError('Please verify your customer email address before placing your order.');
+      return;
+    }
+
     submitLockRef.current = true;
     setSubmitting(true);
 
@@ -176,6 +307,8 @@ export default function CheckoutPage() {
           state: formData.state.trim(),
           pincode: cleanPincode,
         },
+        email_verification_session_id: verificationSessionId,
+        email_verification_token: verificationToken,
       };
 
       const res = await fetch(`${apiUrl}/api/v1/store/orders`, {
@@ -355,21 +488,105 @@ export default function CheckoutPage() {
                         <label htmlFor="email" className="input-label">
                           Email Address <span className="req">*</span>
                         </label>
-                        <input
-                          type="email"
-                          id="email"
-                          name="email"
-                          className={`input-field ${fieldErrors.email ? 'has-error' : ''}`}
-                          placeholder="rahul@example.com"
-                          value={formData.email}
-                          onChange={handleChange}
-                          data-testid="checkout-email-input"
-                        />
+                        <div className="email-verify-row">
+                          <input
+                            type="email"
+                            id="email"
+                            name="email"
+                            className={`input-field ${fieldErrors.email ? 'has-error' : ''}`}
+                            placeholder="rahul@example.com"
+                            value={formData.email}
+                            onChange={handleChange}
+                            data-testid="checkout-email-input"
+                          />
+                          {!emailVerified ? (
+                            <button
+                              type="button"
+                              className="btn-verify-email"
+                              onClick={() => handleSendEmailOtp(false)}
+                              disabled={sendingEmailOtp}
+                              data-testid="verify-email-button"
+                            >
+                              {sendingEmailOtp ? 'Sending...' : emailOtpSent ? 'Sent' : 'Verify Email'}
+                            </button>
+                          ) : (
+                            <span className="email-verified-badge" data-testid="email-verified-badge">
+                              ✓ Email Verified
+                            </span>
+                          )}
+                        </div>
                         {fieldErrors.email && (
                           <span className="error-text">{fieldErrors.email}</span>
                         )}
                       </div>
                     </div>
+
+                    {/* Email OTP Verification Box */}
+                    {emailOtpSent && !emailVerified && (
+                      <div className="email-otp-card" data-testid="email-otp-box">
+                        <div className="email-otp-header">
+                          <strong>Verify Your Email</strong>
+                          <span>Enter the 6-digit OTP sent to {formData.email.trim().toLowerCase()}</span>
+                        </div>
+
+                        {emailOtpDevCode && (
+                          <div className="email-otp-dev-pill" data-testid="email-otp-dev-box">
+                            <span>
+                              🧪 Sandbox Email OTP: <strong data-testid="email-otp-dev-code">{emailOtpDevCode}</strong>
+                            </span>
+                            <button
+                              type="button"
+                              className="autofill-otp-btn"
+                              onClick={() => setEmailOtpInput(emailOtpDevCode)}
+                              data-testid="email-otp-autofill-btn"
+                            >
+                              Autofill
+                            </button>
+                          </div>
+                        )}
+
+                        <div className="email-otp-input-row">
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            maxLength={6}
+                            className="input-field email-otp-field"
+                            placeholder="Enter 6-digit OTP"
+                            value={emailOtpInput}
+                            onChange={(e) => {
+                              setEmailOtpInput(e.target.value.replace(/\D/g, '').slice(0, 6));
+                              if (emailOtpError) setEmailOtpError('');
+                            }}
+                            data-testid="email-otp-input"
+                          />
+                          <button
+                            type="button"
+                            className="btn-confirm-email-otp"
+                            onClick={handleVerifyEmailOtp}
+                            disabled={verifyingEmailOtp}
+                            data-testid="confirm-email-otp-button"
+                          >
+                            {verifyingEmailOtp ? 'Verifying...' : 'Confirm OTP'}
+                          </button>
+                          <button
+                            type="button"
+                            className="btn-resend-email-otp"
+                            onClick={() => handleSendEmailOtp(true)}
+                            disabled={sendingEmailOtp || emailResendCooldown > 0}
+                            data-testid="resend-email-otp-button"
+                          >
+                            {emailResendCooldown > 0 ? `Resend (${emailResendCooldown}s)` : 'Resend OTP'}
+                          </button>
+                        </div>
+
+                        {emailOtpInfo && !emailOtpError && (
+                          <p className="email-otp-info" data-testid="email-otp-info">{emailOtpInfo}</p>
+                        )}
+                        {emailOtpError && (
+                          <p className="error-text" data-testid="email-otp-error">{emailOtpError}</p>
+                        )}
+                      </div>
+                    )}
 
                     <div className="form-group">
                       <label htmlFor="address" className="input-label">

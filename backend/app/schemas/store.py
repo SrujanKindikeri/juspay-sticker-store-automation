@@ -89,6 +89,8 @@ class OrderItemInput(BaseModel):
 class CreateOrderRequest(BaseModel):
     items: List[OrderItemInput] = Field(..., min_length=1, description="List of items in cart")
     delivery: CustomerDeliveryInput = Field(..., description="Customer delivery address")
+    email_verification_session_id: Optional[str] = Field(None, max_length=64, description="Verified email session ID")
+    email_verification_token: Optional[str] = Field(None, max_length=128, description="Verified email proof token")
 
     model_config = ConfigDict(extra="ignore")
 
@@ -128,5 +130,10 @@ class StoreOrderResponse(BaseModel):
     order_token: Optional[str] = None
     payment_transaction_id: Optional[str] = None
     payment_reference: Optional[str] = None
+    email_verified: bool = False
+    email_verified_at: Optional[datetime] = None
+    receipt_email_status: str = "NOT_SENT"
+    receipt_email_sent_at: Optional[datetime] = None
+    receipt_email_attempts: int = 0
 
     model_config = ConfigDict(from_attributes=True)

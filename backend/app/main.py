@@ -103,6 +103,38 @@ async def lifespan(app: FastAPI):
                 ALTER TABLE store_orders 
                 ADD COLUMN IF NOT EXISTS payment_reference VARCHAR(64);
             """))
+            conn.execute(text("""
+                ALTER TABLE store_orders 
+                ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE;
+            """))
+            conn.execute(text("""
+                ALTER TABLE store_orders 
+                ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMP;
+            """))
+            conn.execute(text("""
+                ALTER TABLE store_orders 
+                ADD COLUMN IF NOT EXISTS email_verification_session_id VARCHAR(64);
+            """))
+            conn.execute(text("""
+                ALTER TABLE store_orders 
+                ADD COLUMN IF NOT EXISTS receipt_email_status VARCHAR(30) DEFAULT 'NOT_SENT';
+            """))
+            conn.execute(text("""
+                ALTER TABLE store_orders 
+                ADD COLUMN IF NOT EXISTS receipt_email_sent_at TIMESTAMP;
+            """))
+            conn.execute(text("""
+                ALTER TABLE store_orders 
+                ADD COLUMN IF NOT EXISTS receipt_email_attempts INTEGER DEFAULT 0;
+            """))
+            conn.execute(text("""
+                ALTER TABLE store_orders 
+                ADD COLUMN IF NOT EXISTS receipt_email_last_error VARCHAR(255);
+            """))
+            conn.execute(text("""
+                ALTER TABLE store_orders 
+                ADD COLUMN IF NOT EXISTS receipt_email_last_attempt_at TIMESTAMP;
+            """))
             conn.commit()
         # Seed physical sticker store catalog if empty
         from app.services.store_service import seed_store_catalog

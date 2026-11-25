@@ -10,6 +10,7 @@ from fastapi import HTTPException, status
 from app.models.store import Category, Product, CustomerDelivery, StoreOrder, StoreOrderItem
 from app.schemas.store import CreateOrderRequest
 from app.core.config import settings
+from app.services.email_verification_service import assert_email_verified_for_order
 
 
 SAMPLE_CATEGORIES = [
@@ -355,6 +356,15 @@ def create_store_order(
             detail="Order must contain at least one item.",
         )
 
+    verified_session = None
+    if settings.email_verification_enabled:
+        verified_session = assert_email_verified_for_order(
+            db=db,
+            email=request.delivery.email,
+            session_id=request.email_verification_session_id,
+            verification_token=request.email_verification_token,
+        )
+
     order_id = f"STK-ORD-{uuid.uuid4().hex[:10].upper()}"
     calculated_subtotal = 0.0
     created_items: List[StoreOrderItem] = []
@@ -411,6 +421,11 @@ def create_store_order(
         customer_email=request.delivery.email,
         order_token_hash=order_token_hash,
         stock_reserved=True,
+        email_verified=bool(verified_session),
+        email_verified_at=verified_session.verified_at if verified_session else None,
+        email_verification_session_id=verified_session.session_id if verified_session else None,
+        receipt_email_status="NOT_SENT",
+        receipt_email_attempts=0,
     )
     db.add(order)
 

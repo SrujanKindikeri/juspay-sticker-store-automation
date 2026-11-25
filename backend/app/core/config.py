@@ -37,6 +37,18 @@ class Settings(BaseSettings):
     otp_max_attempts: int = 3
     otp_max_resends: int = 3
 
+    # Email Verification & SMTP Delivery
+    email_verification_enabled: bool = True
+    smtp_host: str = "localhost"
+    smtp_port: int = 1025
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_from_email: str = "no-reply@stickora.demo"
+    smtp_from_name: str = "Stickora Store"
+    smtp_use_tls: bool = False
+    smtp_use_ssl: bool = False
+    email_max_retries: int = 3
+
     model_config = SettingsConfigDict(
         env_file=(".env", "../.env", "../../.env"),
         env_file_encoding="utf-8",

@@ -257,6 +257,15 @@ def process_authenticated_payment(
     db.commit()
     db.refresh(txn)
 
+    # Feature 2 & 4: Automatically send HTML confirmation + PDF receipt ONLY after verified SUCCESS
+    # Email failures must never roll back or alter a confirmed successful payment.
+    if final_status == "SUCCESS" and (txn.order_id or "").startswith("STK-ORD-"):
+        try:
+            from app.services.email_service import send_order_confirmation_email
+            send_order_confirmation_email(db=db, order_id=txn.order_id)
+        except Exception:
+            pass
+
     return txn
 
 

@@ -35,6 +35,13 @@ export class StorePage extends BasePage {
   readonly cityInput: Locator;
   readonly stateInput: Locator;
   readonly pincodeInput: Locator;
+  readonly verifyEmailBtn: Locator;
+  readonly emailOtpInput: Locator;
+  readonly emailOtpAutofillBtn: Locator;
+  readonly confirmEmailOtpBtn: Locator;
+  readonly resendEmailOtpBtn: Locator;
+  readonly emailVerifiedBadge: Locator;
+  readonly emailOtpError: Locator;
   readonly placeOrderBtn: Locator;
   readonly checkoutError: Locator;
 
@@ -74,6 +81,13 @@ export class StorePage extends BasePage {
     this.cityInput = page.locator('[data-testid="checkout-city-input"]');
     this.stateInput = page.locator('[data-testid="checkout-state-input"]');
     this.pincodeInput = page.locator('[data-testid="checkout-pincode-input"]');
+    this.verifyEmailBtn = page.locator('[data-testid="verify-email-button"]');
+    this.emailOtpInput = page.locator('[data-testid="email-otp-input"]');
+    this.emailOtpAutofillBtn = page.locator('[data-testid="email-otp-autofill-btn"]');
+    this.confirmEmailOtpBtn = page.locator('[data-testid="confirm-email-otp-button"]');
+    this.resendEmailOtpBtn = page.locator('[data-testid="resend-email-otp-button"]');
+    this.emailVerifiedBadge = page.locator('[data-testid="email-verified-badge"]');
+    this.emailOtpError = page.locator('[data-testid="email-otp-error"]');
     this.placeOrderBtn = page.locator('[data-testid="place-order-button"]');
     this.checkoutError = page.locator('[data-testid="checkout-error"]');
 
@@ -130,7 +144,17 @@ export class StorePage extends BasePage {
     await expect(this.navCartCount).toHaveText(String(count));
   }
 
-  async fillDeliveryDetails(details: DeliveryDetails): Promise<void> {
+  async verifyCheckoutEmail(): Promise<void> {
+    await this.verifyEmailBtn.click();
+    await expect(this.emailOtpInput).toBeVisible({ timeout: 10_000 });
+    await expect(this.emailOtpAutofillBtn).toBeVisible({ timeout: 5_000 });
+    await this.emailOtpAutofillBtn.click();
+    await this.confirmEmailOtpBtn.click();
+    await expect(this.emailVerifiedBadge).toBeVisible({ timeout: 10_000 });
+    await expect(this.emailVerifiedBadge).toContainText('Email Verified');
+  }
+
+  async fillDeliveryDetails(details: DeliveryDetails, verifyEmail: boolean = true): Promise<void> {
     await this.nameInput.fill(details.fullName);
     await this.phoneInput.fill(details.phone);
     await this.emailInput.fill(details.email);
@@ -138,6 +162,9 @@ export class StorePage extends BasePage {
     await this.cityInput.fill(details.city);
     await this.stateInput.fill(details.state);
     await this.pincodeInput.fill(details.pincode);
+    if (verifyEmail) {
+      await this.verifyCheckoutEmail();
+    }
   }
 
   async submitOrder(): Promise<void> {

@@ -1,5 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
+from tests.conftest import verify_test_email
+from tests.conftest import verify_test_email
 
 
 def test_payment_initiation_for_store_order_uses_authoritative_total(client: TestClient):
@@ -18,6 +20,7 @@ def test_payment_initiation_for_store_order_uses_authoritative_total(client: Tes
             "state": "Karnataka",
             "pincode": "560038",
         },
+        **verify_test_email(client, "rohan@example.com"),
     }
     order_res = client.post("/api/v1/store/orders", json=order_payload)
     assert order_res.status_code == 201
@@ -64,6 +67,7 @@ def test_tampered_frontend_amount_is_rejected(client: TestClient):
             "state": "Karnataka",
             "pincode": "560001",
         },
+        **verify_test_email(client, "attacker@example.com"),
     }
     order_res = client.post("/api/v1/store/orders", json=order_payload)
     assert order_res.status_code == 201
@@ -105,6 +109,7 @@ def test_successful_payment_updates_store_order_to_paid(client: TestClient):
             "state": "Karnataka",
             "pincode": "560025",
         },
+        **verify_test_email(client, "sunil@example.com"),
     }
     order_res = client.post("/api/v1/store/orders", json=order_payload)
     assert order_res.status_code == 201
@@ -178,6 +183,7 @@ def test_cannot_pay_already_paid_store_order(client: TestClient):
                 "state": "Karnataka",
                 "pincode": "560025",
             },
+            **verify_test_email(client, "priya@example.com"),
         },
     )
     order_data = order_res.json()
@@ -240,6 +246,7 @@ def test_declined_payment_updates_store_order_to_failed_and_restores_stock(clien
                 "state": "Karnataka",
                 "pincode": "560001",
             },
+            **verify_test_email(client, "decline@example.com"),
         },
     )
     order_data = order_res.json()
@@ -306,6 +313,7 @@ def test_failed_payment_via_otp_lockout_updates_store_order_to_failed_and_restor
                 "state": "Karnataka",
                 "pincode": "560001",
             },
+            **verify_test_email(client, "lockout@example.com"),
         },
     )
     order_data = order_res.json()
@@ -374,6 +382,7 @@ def test_safe_payment_retry_after_failure_re_reserves_stock_and_completes(client
                 "state": "Karnataka",
                 "pincode": "560001",
             },
+            **verify_test_email(client, "retry@example.com"),
         },
     )
     order_data = order_res.json()
