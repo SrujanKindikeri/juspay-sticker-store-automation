@@ -454,7 +454,7 @@ export default function CheckoutPage() {
                   <div className="phase-note-card">
                     <div className="note-icon">🛡️</div>
                     <div className="note-text">
-                      <strong>Powered by JUSPAY Secure Gateway (Sandbox)</strong>
+                      <strong>Educational payment simulation — no real money transferred.</strong>
                       <p>
                         Your Stickora order is registered as <code>PENDING_PAYMENT</code> with authoritative server pricing, then redirected immediately to JUSPAY Payment Gateway (Card, UPI, or Net Banking).
                       </p>

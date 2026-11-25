@@ -52,7 +52,7 @@ export const StoreFooter: React.FC = () => {
           <p>✉️ Email: <code>hello@stickora.demo</code></p>
           <p>📞 Phone: <code>+91 80 4000 8921</code></p>
           <div className="footer-tagline">
-            Stickora Storefront · Checkout powered by JUSPAY Gateway.
+            Educational payment simulation — no real money transferred.
           </div>
         </div>
       </div>
