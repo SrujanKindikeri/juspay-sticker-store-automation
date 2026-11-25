@@ -257,6 +257,7 @@ test.describe('Phase 8: Physical Sticker Store & JUSPAY Gateway Integration', ()
     storePage,
     checkoutPage,
     otpPage,
+    resultPage,
     page,
   }) => {
     // 1. Create order
@@ -659,7 +660,7 @@ test.describe('Phase 8: Physical Sticker Store & JUSPAY Gateway Integration', ()
     );
     expect(forbiddenRes.status()).toBe(403);
     const forbiddenJson = await forbiddenRes.json();
-    expect(forbiddenJson.detail).toContain('Invalid or expired order access token');
+    expect(forbiddenJson.detail).toContain('Invalid order access token');
 
     // 4. Access WITH VALID token via query parameter -> HTTP 200 OK
     const authQueryRes = await page.request.get(

@@ -164,7 +164,8 @@ export async function queryProductStock(productId: string): Promise<number> {
 export async function expireTransactionOtpInDb(transactionId: string): Promise<void> {
   const query = `
     UPDATE payment_transactions
-    SET last_otp_sent_at = NOW() - INTERVAL '10 minutes'
+    SET otp_expires_at = timezone('utc', NOW()) - INTERVAL '10 minutes',
+        last_otp_sent_at = timezone('utc', NOW()) - INTERVAL '10 minutes'
     WHERE transaction_id = $1;
   `;
   await getPool().query(query, [transactionId]);

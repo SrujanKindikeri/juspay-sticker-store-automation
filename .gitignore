@@ -42,15 +42,24 @@ coverage.xml
 # Environment Variables
 .env
 .env.local
+.env.production
+.env.*.local
 .env.development.local
 .env.test.local
 .env.production.local
+**/.env
+**/.env.local
+**/.env.production
 !.env.example
+!frontend/web/.env.example
 
-# Database
+# Database & Local Dumps
 *.sqlite
 *.sqlite3
 *.db
+*.sql
+*.dump
+*.bak
 
 # Automation & Playwright
 test-results/
