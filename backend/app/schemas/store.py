@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Literal
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 
@@ -89,8 +89,14 @@ class OrderItemInput(BaseModel):
 class CreateOrderRequest(BaseModel):
     items: List[OrderItemInput] = Field(..., min_length=1, description="List of items in cart")
     delivery: CustomerDeliveryInput = Field(..., description="Customer delivery address")
+    contact_verification_channel: Literal["email", "whatsapp"] = Field(
+        default="email",
+        description="Contact verification method selected during checkout",
+    )
     email_verification_session_id: Optional[str] = Field(None, max_length=64, description="Verified email session ID")
     email_verification_token: Optional[str] = Field(None, max_length=128, description="Verified email proof token")
+    whatsapp_verification_session_id: Optional[str] = Field(None, max_length=64, description="Verified WhatsApp session ID")
+    whatsapp_verification_token: Optional[str] = Field(None, max_length=128, description="Verified WhatsApp proof token")
 
     model_config = ConfigDict(extra="ignore")
 
@@ -130,8 +136,11 @@ class StoreOrderResponse(BaseModel):
     order_token: Optional[str] = None
     payment_transaction_id: Optional[str] = None
     payment_reference: Optional[str] = None
+    contact_verification_channel: str = "email"
     email_verified: bool = False
     email_verified_at: Optional[datetime] = None
+    whatsapp_verified: bool = False
+    whatsapp_verified_at: Optional[datetime] = None
     receipt_email_status: str = "NOT_SENT"
     receipt_email_sent_at: Optional[datetime] = None
     receipt_email_attempts: int = 0

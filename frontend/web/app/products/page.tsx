@@ -61,7 +61,7 @@ function ProductsContent() {
       <main className="store-section" style={{ minHeight: '60vh' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
-            <h1 className="section-title" data-testid="catalogue-heading">
+            <h1 className="section-title catalogue-heading" data-testid="catalogue-heading">
               {searchParam ? `Results for "${searchParam}"` : categoryParam !== 'all' ? `${categoryParam.toUpperCase()} STICKERS` : 'ALL STICKERS'}
             </h1>
             <p className="section-subtitle">

@@ -98,10 +98,14 @@ class StoreOrder(Base):
     payment_transaction_id = Column(String(64), nullable=True)
     payment_reference = Column(String(64), nullable=True)
 
-    # Email verification & automatic confirmation receipt tracking
+    # Email & WhatsApp contact verification + confirmation receipt tracking
+    contact_verification_channel = Column(String(20), default="email", nullable=False)
     email_verified = Column(Boolean, default=False, nullable=False)
     email_verified_at = Column(DateTime, nullable=True)
     email_verification_session_id = Column(String(64), nullable=True)
+    whatsapp_verified = Column(Boolean, default=False, nullable=False)
+    whatsapp_verified_at = Column(DateTime, nullable=True)
+    whatsapp_verification_session_id = Column(String(64), nullable=True)
     receipt_email_status = Column(String(30), default="NOT_SENT", nullable=False)  # NOT_SENT, SENT, FAILED
     receipt_email_sent_at = Column(DateTime, nullable=True)
     receipt_email_attempts = Column(Integer, default=0, nullable=False)

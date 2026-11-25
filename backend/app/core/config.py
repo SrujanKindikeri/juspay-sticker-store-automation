@@ -49,6 +49,23 @@ class Settings(BaseSettings):
     smtp_use_ssl: bool = False
     email_max_retries: int = 3
 
+    # Experimental WhatsApp Integration (BerryProtocol)
+    whatsapp_provider: str = "berryprotocol"
+    whatsapp_enabled: bool = True
+    whatsapp_experimental: bool = True
+    whatsapp_sender_name: str = "Stickora Store"
+    whatsapp_session_id: str = "stickora_berry_session"
+    whatsapp_session_path: str = "./data/berry_auth"
+    whatsapp_database_path: str = "./data/berry_store.db"
+    whatsapp_meta_file: str = "./data/whatsapp_session.json"
+    whatsapp_service_url: str = "http://127.0.0.1:8002"
+    whatsapp_internal_api_key: str = ""
+    whatsapp_admin_key: str = ""
+    whatsapp_dispatch_enabled: bool = True
+    whatsapp_request_timeout_seconds: float = 10.0
+    whatsapp_rate_limit_window_seconds: int = 600
+    whatsapp_rate_limit_max_requests: int = 6
+
     model_config = SettingsConfigDict(
         env_file=(".env", "../.env", "../../.env"),
         env_file_encoding="utf-8",

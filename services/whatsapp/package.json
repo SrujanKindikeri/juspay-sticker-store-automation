@@ -1,0 +1,21 @@
+{
+  "name": "stickora-whatsapp-service",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Experimental BerryProtocol WhatsApp Web bridge sidecar for Stickora Store",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=20 <27"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "berryprotocol": "^0.1.10",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "qrcode": "^1.5.4"
+  }
+}

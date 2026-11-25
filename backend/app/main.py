@@ -135,6 +135,22 @@ async def lifespan(app: FastAPI):
                 ALTER TABLE store_orders 
                 ADD COLUMN IF NOT EXISTS receipt_email_last_attempt_at TIMESTAMP;
             """))
+            conn.execute(text("""
+                ALTER TABLE store_orders 
+                ADD COLUMN IF NOT EXISTS contact_verification_channel VARCHAR(20) DEFAULT 'email';
+            """))
+            conn.execute(text("""
+                ALTER TABLE store_orders 
+                ADD COLUMN IF NOT EXISTS whatsapp_verified BOOLEAN DEFAULT FALSE;
+            """))
+            conn.execute(text("""
+                ALTER TABLE store_orders 
+                ADD COLUMN IF NOT EXISTS whatsapp_verified_at TIMESTAMP;
+            """))
+            conn.execute(text("""
+                ALTER TABLE store_orders 
+                ADD COLUMN IF NOT EXISTS whatsapp_verification_session_id VARCHAR(64);
+            """))
             conn.commit()
         # Seed physical sticker store catalog if empty
         from app.services.store_service import seed_store_catalog

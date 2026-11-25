@@ -40,13 +40,14 @@ export const StoreNavbar: React.FC = () => {
           <form className="store-search-form" onSubmit={handleSearchSubmit} data-testid="store-search-form">
             <input
               type="text"
+              aria-label="Search stickers"
               placeholder="Search anime, tech, gaming, aesthetic stickers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="store-search-input"
               data-testid="store-search-input"
             />
-            <button type="submit" className="store-search-button" data-testid="store-search-button">
+            <button type="submit" aria-label="Search" className="store-search-button" data-testid="store-search-button">
               🔍
             </button>
           </form>

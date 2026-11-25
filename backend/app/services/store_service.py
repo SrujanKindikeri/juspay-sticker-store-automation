@@ -11,6 +11,7 @@ from app.models.store import Category, Product, CustomerDelivery, StoreOrder, St
 from app.schemas.store import CreateOrderRequest
 from app.core.config import settings
 from app.services.email_verification_service import assert_email_verified_for_order
+from app.services.whatsapp_verification_service import assert_whatsapp_verified_for_order
 
 
 SAMPLE_CATEGORIES = [
@@ -357,7 +358,17 @@ def create_store_order(
         )
 
     verified_session = None
-    if settings.email_verification_enabled:
+    verified_whatsapp_session = None
+    channel = getattr(request, "contact_verification_channel", "email") or "email"
+
+    if channel == "whatsapp":
+        verified_whatsapp_session = assert_whatsapp_verified_for_order(
+            db=db,
+            phone=request.delivery.mobile_number,
+            session_id=request.whatsapp_verification_session_id,
+            verification_token=request.whatsapp_verification_token,
+        )
+    elif settings.email_verification_enabled:
         verified_session = assert_email_verified_for_order(
             db=db,
             email=request.delivery.email,
@@ -421,9 +432,13 @@ def create_store_order(
         customer_email=request.delivery.email,
         order_token_hash=order_token_hash,
         stock_reserved=True,
+        contact_verification_channel=channel,
         email_verified=bool(verified_session),
         email_verified_at=verified_session.verified_at if verified_session else None,
         email_verification_session_id=verified_session.session_id if verified_session else None,
+        whatsapp_verified=bool(verified_whatsapp_session),
+        whatsapp_verified_at=verified_whatsapp_session.verified_at if verified_whatsapp_session else None,
+        whatsapp_verification_session_id=verified_whatsapp_session.session_id if verified_whatsapp_session else None,
         receipt_email_status="NOT_SENT",
         receipt_email_attempts=0,
     )
@@ -444,6 +459,10 @@ def create_store_order(
 
     for oi in created_items:
         db.add(oi)
+
+    if verified_whatsapp_session is not None:
+        verified_whatsapp_session.status = "CONSUMED"
+        verified_whatsapp_session.order_id = order_id
 
     db.commit()
     db.refresh(order)

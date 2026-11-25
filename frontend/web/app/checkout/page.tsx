@@ -64,6 +64,20 @@ export default function CheckoutPage() {
   const [confirmedOrder, setConfirmedOrder] = useState<ConfirmedOrder | null>(null);
   const submitLockRef = useRef<boolean>(false);
 
+  // Customer Contact Verification Channel ('email' | 'whatsapp') & OTP States
+  const [contactChannel, setContactChannel] = useState<'email' | 'whatsapp'>('email');
+  const [waAvailability, setWaAvailability] = useState<{
+    enabled: boolean;
+    experimental: boolean;
+    available: boolean;
+    message: string;
+  }>({
+    enabled: true,
+    experimental: true,
+    available: false,
+    message: 'Checking WhatsApp availability...',
+  });
+
   // Customer Email OTP Verification States (independent from Payment OTP)
   const [emailVerified, setEmailVerified] = useState<boolean>(false);
   const [verifiedEmailAddress, setVerifiedEmailAddress] = useState<string>('');
@@ -78,13 +92,114 @@ export default function CheckoutPage() {
   const [emailOtpInfo, setEmailOtpInfo] = useState<string>('');
   const [emailResendCooldown, setEmailResendCooldown] = useState<number>(0);
 
+  // Customer WhatsApp OTP Verification States (independent from Payment OTP)
+  const [whatsappVerified, setWhatsappVerified] = useState<boolean>(false);
+  const [verifiedWhatsappPhone, setVerifiedWhatsappPhone] = useState<string>('');
+  const [waSessionId, setWaSessionId] = useState<string>('');
+  const [waVerificationToken, setWaVerificationToken] = useState<string>('');
+  const [waOtpSent, setWaOtpSent] = useState<boolean>(false);
+  const [waOtpInput, setWaOtpInput] = useState<string>('');
+  const [sendingWaOtp, setSendingWaOtp] = useState<boolean>(false);
+  const [verifyingWaOtp, setVerifyingWaOtp] = useState<boolean>(false);
+  const [waOtpError, setWaOtpError] = useState<string>('');
+  const [waOtpInfo, setWaOtpInfo] = useState<string>('');
+  const [waResendCooldown, setWaResendCooldown] = useState<number>(0);
+
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
+
+  useEffect(() => {
+    let active = true;
+    fetch(`${apiUrl}/api/v1/verification/whatsapp/availability`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (active && data) {
+          setWaAvailability({
+            enabled: Boolean(data.enabled),
+            experimental: Boolean(data.experimental),
+            available: Boolean(data.available),
+            message: data.message || '',
+          });
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setWaAvailability((prev) => ({
+            ...prev,
+            available: false,
+            message: 'WhatsApp verification is currently unavailable. Please verify via Email OTP.',
+          }));
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [apiUrl]);
 
   useEffect(() => {
     if (emailResendCooldown <= 0) return;
     const timer = setTimeout(() => setEmailResendCooldown((prev) => Math.max(0, prev - 1)), 1000);
     return () => clearTimeout(timer);
   }, [emailResendCooldown]);
+
+  useEffect(() => {
+    if (waResendCooldown <= 0) return;
+    const timer = setTimeout(() => setWaResendCooldown((prev) => Math.max(0, prev - 1)), 1000);
+    return () => clearTimeout(timer);
+  }, [waResendCooldown]);
+
+  const normalizeWhatsAppPhoneToE164 = (
+    rawPhone: string
+  ): { e164: string; valid: boolean; error?: string } => {
+    const trimmed = rawPhone.trim();
+    if (!trimmed) {
+      return {
+        e164: '',
+        valid: false,
+        error: 'Enter your 10-digit Indian mobile number (e.g. 9640404455) before requesting WhatsApp OTP.',
+      };
+    }
+
+    const withPlus = trimmed.startsWith('00') ? `+${trimmed.slice(2)}` : trimmed;
+    const stripped = withPlus.replace(/[\s\-().]/g, '');
+    const hasPlus = stripped.startsWith('+');
+    const digits = stripped.replace(/\D/g, '');
+
+    if (!hasPlus && digits.length === 10) {
+      if (!/^[6-9]\d{9}$/.test(digits)) {
+        return {
+          e164: '',
+          valid: false,
+          error: 'Enter a valid 10-digit Indian mobile number starting with 6–9 (e.g. 9640404455).',
+        };
+      }
+      return { e164: `+91${digits}`, valid: true };
+    }
+
+    if (!hasPlus && digits.length === 11 && digits.startsWith('0') && /^0[6-9]\d{9}$/.test(digits)) {
+      return { e164: `+91${digits.slice(1)}`, valid: true };
+    }
+
+    if (digits.startsWith('91') && digits.length === 12) {
+      if (!/^91[6-9]\d{9}$/.test(digits)) {
+        return {
+          e164: '',
+          valid: false,
+          error: 'Enter a valid Indian WhatsApp number (+91 followed by 10 digits starting with 6–9).',
+        };
+      }
+      return { e164: `+${digits}`, valid: true };
+    }
+
+    if (hasPlus && digits.length >= 10 && digits.length <= 15 && /^[1-9]\d{9,14}$/.test(digits)) {
+      return { e164: `+${digits}`, valid: true };
+    }
+
+    return {
+      e164: '',
+      valid: false,
+      error: 'Enter a valid mobile number in 10-digit Indian or +91 E.164 format (e.g. +919640404455).',
+    };
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -104,6 +219,23 @@ export default function CheckoutPage() {
         setEmailOtpDevCode('');
         setEmailOtpError('');
         setEmailOtpInfo('');
+      }
+    }
+
+    if (name === 'phone') {
+      const normalizedPhone = normalizeWhatsAppPhoneToE164(value);
+      const comparablePhone = normalizedPhone.valid ? normalizedPhone.e164 : value.replace(/[\s\-()]/g, '');
+      if (whatsappVerified && comparablePhone !== verifiedWhatsappPhone) {
+        setWhatsappVerified(false);
+        setVerifiedWhatsappPhone('');
+        setWaSessionId('');
+        setWaVerificationToken('');
+      }
+      if (comparablePhone !== verifiedWhatsappPhone) {
+        setWaOtpSent(false);
+        setWaOtpInput('');
+        setWaOtpError('');
+        setWaOtpInfo('');
       }
     }
 
@@ -199,6 +331,138 @@ export default function CheckoutPage() {
     }
   };
 
+  const handleSendWhatsAppOtp = async (isResend: boolean = false) => {
+    const normalized = normalizeWhatsAppPhoneToE164(formData.phone);
+    if (!normalized.valid) {
+      const msg = normalized.error || 'Enter a valid mobile number before requesting WhatsApp OTP.';
+      setFieldErrors((prev) => ({ ...prev, phone: msg }));
+      setWaOtpError(msg);
+      setWaOtpInfo('');
+      return;
+    }
+
+    // Display normalized E.164 number (+91...) consistently across form and OTP confirmation
+    if (formData.phone.trim() !== normalized.e164) {
+      setFormData((prev) => ({ ...prev, phone: normalized.e164 }));
+    }
+
+    setSendingWaOtp(true);
+    setWaOtpError('');
+    setWaOtpInfo('');
+    setFieldErrors((prev) => ({ ...prev, phone: '' }));
+
+    try {
+      const bodyPayload: Record<string, string> = { phone: normalized.e164 };
+      if (isResend && waSessionId) {
+        bodyPayload.session_id = waSessionId;
+      }
+
+      const res = await fetch(`${apiUrl}/api/v1/verification/whatsapp/send-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyPayload),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 503) {
+          setWaAvailability((prev) => ({
+            ...prev,
+            available: false,
+            message: typeof data?.detail === 'string' ? data.detail : prev.message,
+          }));
+        }
+        throw new Error(extractApiErrorMessage(data, res.status));
+      }
+
+      if (!data?.session_id) {
+        throw new Error('WhatsApp verification response was incomplete. Please try again.');
+      }
+
+      setWaAvailability((prev) => ({
+        ...prev,
+        available: true,
+        message: 'Experimental WhatsApp OTP verification is online.',
+      }));
+      setWaSessionId(data.session_id);
+      setWaOtpSent(true);
+      setWaOtpInput('');
+      setWaResendCooldown(data.cooldown_seconds || 30);
+      setWaOtpInfo(
+        `${data.message || `Verification OTP submitted to ${normalized.e164} via WhatsApp.`} (Target: ${normalized.e164})`
+      );
+    } catch (err: any) {
+      if (!isResend) {
+        setWaOtpSent(false);
+      }
+      if (err?.name === 'TypeError' || (typeof err?.message === 'string' && err.message.includes('Failed to fetch'))) {
+        setWaOtpError(
+          'Network error: unable to reach the WhatsApp verification service. Verify backend & sidecar are running or switch to Email OTP.'
+        );
+      } else {
+        setWaOtpError(
+          err?.message || 'Unable to send WhatsApp OTP. You can switch to Email OTP verification.'
+        );
+      }
+    } finally {
+      setSendingWaOtp(false);
+    }
+  };
+
+  const handleVerifyWhatsAppOtp = async () => {
+    const normalized = normalizeWhatsAppPhoneToE164(formData.phone);
+    if (!normalized.valid) {
+      setWaOtpError(normalized.error || 'Invalid mobile number.');
+      return;
+    }
+    if (!waSessionId) {
+      setWaOtpError('Request a WhatsApp OTP first before verifying.');
+      return;
+    }
+
+    const cleanOtp = waOtpInput.trim();
+    if (!/^\d{6}$/.test(cleanOtp)) {
+      setWaOtpError('Please enter a valid 6-digit numeric WhatsApp OTP.');
+      return;
+    }
+
+    setVerifyingWaOtp(true);
+    setWaOtpError('');
+
+    try {
+      const res = await fetch(`${apiUrl}/api/v1/verification/whatsapp/verify-otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: waSessionId,
+          phone: normalized.e164,
+          otp: cleanOtp,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(extractApiErrorMessage(data, res.status));
+      }
+      if (!data?.verified || !data?.verification_token) {
+        throw new Error('Backend did not confirm WhatsApp verification. Please try again.');
+      }
+
+      setWhatsappVerified(true);
+      setVerifiedWhatsappPhone(normalized.e164);
+      setWaVerificationToken(data.verification_token);
+      setWaOtpSent(false);
+      setWaOtpInfo('');
+      setFieldErrors((prev) => ({ ...prev, phone: '' }));
+    } catch (err: any) {
+      if (err?.name === 'TypeError' || (typeof err?.message === 'string' && err.message.includes('Failed to fetch'))) {
+        setWaOtpError('Network error while verifying WhatsApp OTP. Please check your connection and try again.');
+      } else {
+        setWaOtpError(err?.message || 'WhatsApp OTP verification failed.');
+      }
+    } finally {
+      setVerifyingWaOtp(false);
+    }
+  };
+
   const validate = (): boolean => {
     const errors: Partial<Record<keyof DeliveryFormData, string>> = {};
 
@@ -276,7 +540,16 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!emailVerified || !verificationSessionId || !verificationToken) {
+    if (contactChannel === 'whatsapp') {
+      if (!whatsappVerified || !waSessionId || !waVerificationToken) {
+        setFieldErrors((prev) => ({
+          ...prev,
+          phone: 'Please verify your WhatsApp mobile number with the 6-digit OTP before placing your order.',
+        }));
+        setGeneralError('Please verify your WhatsApp number before placing your order.');
+        return;
+      }
+    } else if (!emailVerified || !verificationSessionId || !verificationToken) {
       setFieldErrors((prev) => ({
         ...prev,
         email: 'Please verify your email address with the 6-digit OTP before placing your order.',
@@ -293,7 +566,7 @@ export default function CheckoutPage() {
       const finalPhone = cleanPhone.startsWith('91') && cleanPhone.length === 12 ? cleanPhone.slice(2) : cleanPhone;
       const cleanPincode = formData.pincode.replace(/\s/g, '');
 
-      const payload = {
+      const payload: Record<string, any> = {
         items: items.map((item) => ({
           product_id: item.product.id,
           quantity: item.quantity,
@@ -307,9 +580,16 @@ export default function CheckoutPage() {
           state: formData.state.trim(),
           pincode: cleanPincode,
         },
-        email_verification_session_id: verificationSessionId,
-        email_verification_token: verificationToken,
+        contact_verification_channel: contactChannel,
       };
+
+      if (contactChannel === 'whatsapp') {
+        payload.whatsapp_verification_session_id = waSessionId;
+        payload.whatsapp_verification_token = waVerificationToken;
+      } else {
+        payload.email_verification_session_id = verificationSessionId;
+        payload.email_verification_token = verificationToken;
+      }
 
       const res = await fetch(`${apiUrl}/api/v1/store/orders`, {
         method: 'POST',
@@ -445,84 +725,148 @@ export default function CheckoutPage() {
 
                 <form onSubmit={handlePlaceOrder} noValidate>
                   <div className="form-section">
-                    <div className="form-group">
-                      <label htmlFor="fullName" className="input-label">
-                        Full Name <span className="req">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        id="fullName"
-                        name="fullName"
-                        className={`input-field ${fieldErrors.fullName ? 'has-error' : ''}`}
-                        placeholder="e.g. Rahul Sharma"
-                        value={formData.fullName}
-                        onChange={handleChange}
-                        data-testid="checkout-name-input"
-                      />
-                      {fieldErrors.fullName && (
-                        <span className="error-text">{fieldErrors.fullName}</span>
-                      )}
-                    </div>
-
-                    <div className="form-grid-2">
-                      <div className="form-group">
-                        <label htmlFor="phone" className="input-label">
-                          Mobile Number <span className="req">*</span>
-                        </label>
-                        <input
-                          type="tel"
-                          id="phone"
-                          name="phone"
-                          className={`input-field ${fieldErrors.phone ? 'has-error' : ''}`}
-                          placeholder="10-digit mobile (e.g. 9876543210)"
-                          value={formData.phone}
-                          onChange={handleChange}
-                          data-testid="checkout-phone-input"
-                        />
-                        {fieldErrors.phone && (
-                          <span className="error-text">{fieldErrors.phone}</span>
-                        )}
+                    <div className="checkout-contact-group">
+                      <div className="checkout-contact-group-title">
+                        Recipient &amp; Contact Verification
                       </div>
 
                       <div className="form-group">
-                        <label htmlFor="email" className="input-label">
-                          Email Address <span className="req">*</span>
+                        <label htmlFor="fullName" className="input-label">
+                          Full Name <span className="req">*</span>
                         </label>
-                        <div className="email-verify-row">
-                          <input
-                            type="email"
-                            id="email"
-                            name="email"
-                            className={`input-field ${fieldErrors.email ? 'has-error' : ''}`}
-                            placeholder="rahul@example.com"
-                            value={formData.email}
-                            onChange={handleChange}
-                            data-testid="checkout-email-input"
-                          />
-                          {!emailVerified ? (
+                        <input
+                          type="text"
+                          id="fullName"
+                          name="fullName"
+                          className={`input-field ${fieldErrors.fullName ? 'has-error' : ''}`}
+                          placeholder="e.g. Rahul Sharma"
+                          value={formData.fullName}
+                          onChange={handleChange}
+                          data-testid="checkout-name-input"
+                        />
+                        {fieldErrors.fullName && (
+                          <span className="error-text">{fieldErrors.fullName}</span>
+                        )}
+                      </div>
+
+                      <div className="contact-channel-box" data-testid="contact-verification-selector" role="group" aria-label="Contact verification method">
+                        <div className="contact-channel-header">
+                          <span className="input-label" style={{ marginBottom: 0 }}>
+                            Contact Verification Method <span className="req">*</span>
+                          </span>
+                          <span className="contact-channel-sub">Verify email or WhatsApp before placing your order</span>
+                        </div>
+                        <div className="contact-channel-pills">
+                          <button
+                            type="button"
+                            className={`channel-pill ${contactChannel === 'email' ? 'active' : ''}`}
+                            aria-pressed={contactChannel === 'email'}
+                            onClick={() => setContactChannel('email')}
+                            data-testid="select-channel-email"
+                          >
+                            ✉️ Verify via Email OTP
+                          </button>
+                          {waAvailability.enabled && (
                             <button
                               type="button"
-                              className="btn-verify-email"
-                              onClick={() => handleSendEmailOtp(false)}
-                              disabled={sendingEmailOtp}
-                              data-testid="verify-email-button"
+                              className={`channel-pill ${contactChannel === 'whatsapp' ? 'active' : ''}`}
+                              aria-pressed={contactChannel === 'whatsapp'}
+                              onClick={() => setContactChannel('whatsapp')}
+                              data-testid="select-channel-whatsapp"
                             >
-                              {sendingEmailOtp ? 'Sending...' : emailOtpSent ? 'Sent' : 'Verify Email'}
+                              💬 Verify via WhatsApp OTP (Experimental)
                             </button>
-                          ) : (
-                            <span className="email-verified-badge" data-testid="email-verified-badge">
-                              ✓ Email Verified
-                            </span>
                           )}
                         </div>
-                        {fieldErrors.email && (
-                          <span className="error-text">{fieldErrors.email}</span>
+                        {contactChannel === 'whatsapp' && (
+                          <p className="whatsapp-experimental-note" data-testid="whatsapp-availability-note">
+                            Experimental WhatsApp Web OTP channel{waAvailability.available ? ' — online' : ` — ${waAvailability.message}`}
+                          </p>
                         )}
+                      </div>
+
+                      <div className="form-grid-2">
+                        <div className="form-group">
+                          <label htmlFor="phone" className="input-label">
+                            Mobile Number <span className="req">*</span>
+                          </label>
+                          <div className={contactChannel === 'whatsapp' ? 'email-verify-row' : ''}>
+                            <input
+                              type="tel"
+                              id="phone"
+                              name="phone"
+                              className={`input-field ${fieldErrors.phone ? 'has-error' : ''}`}
+                              placeholder="10-digit mobile (e.g. 9876543210)"
+                              value={formData.phone}
+                              onChange={handleChange}
+                              data-testid="checkout-phone-input"
+                            />
+                            {contactChannel === 'whatsapp' && (
+                              !whatsappVerified ? (
+                                <button
+                                  type="button"
+                                  className="btn-verify-whatsapp"
+                                  onClick={() => handleSendWhatsAppOtp(false)}
+                                  disabled={sendingWaOtp}
+                                  aria-busy={sendingWaOtp}
+                                  data-testid="verify-whatsapp-button"
+                                >
+                                  {sendingWaOtp ? 'Sending...' : waOtpSent ? 'Sent' : 'Verify WhatsApp'}
+                                </button>
+                              ) : (
+                                <span className="whatsapp-verified-badge" role="status" data-testid="whatsapp-verified-badge">
+                                  ✓ WhatsApp Verified
+                                </span>
+                              )
+                            )}
+                          </div>
+                          {fieldErrors.phone && (
+                            <span className="error-text">{fieldErrors.phone}</span>
+                          )}
+                        </div>
+
+                        <div className="form-group">
+                          <label htmlFor="email" className="input-label">
+                            Email Address <span className="req">*</span>
+                          </label>
+                          <div className={contactChannel === 'email' ? 'email-verify-row' : ''}>
+                            <input
+                              type="email"
+                              id="email"
+                              name="email"
+                              className={`input-field ${fieldErrors.email ? 'has-error' : ''}`}
+                              placeholder="rahul@example.com"
+                              value={formData.email}
+                              onChange={handleChange}
+                              data-testid="checkout-email-input"
+                            />
+                            {contactChannel === 'email' && (
+                              !emailVerified ? (
+                                <button
+                                  type="button"
+                                  className="btn-verify-email"
+                                  onClick={() => handleSendEmailOtp(false)}
+                                  disabled={sendingEmailOtp}
+                                  data-testid="verify-email-button"
+                                >
+                                  {sendingEmailOtp ? 'Sending...' : emailOtpSent ? 'Sent' : 'Verify Email'}
+                                </button>
+                              ) : (
+                                <span className="email-verified-badge" role="status" data-testid="email-verified-badge">
+                                  ✓ Email Verified
+                                </span>
+                              )
+                            )}
+                          </div>
+                          {fieldErrors.email && (
+                            <span className="error-text">{fieldErrors.email}</span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
                     {/* Email OTP Verification Box */}
-                    {emailOtpSent && !emailVerified && (
+                    {contactChannel === 'email' && emailOtpSent && !emailVerified && (
                       <div className="email-otp-card" data-testid="email-otp-box">
                         <div className="email-otp-header">
                           <strong>Verify Your Email</strong>
@@ -550,6 +894,7 @@ export default function CheckoutPage() {
                             type="text"
                             inputMode="numeric"
                             maxLength={6}
+                            aria-label="Email verification 6-digit OTP"
                             className="input-field email-otp-field"
                             placeholder="Enter 6-digit OTP"
                             value={emailOtpInput}
@@ -584,6 +929,68 @@ export default function CheckoutPage() {
                         )}
                         {emailOtpError && (
                           <p className="error-text" data-testid="email-otp-error">{emailOtpError}</p>
+                        )}
+                      </div>
+                    )}
+
+                    {/* WhatsApp OTP Verification Box */}
+                    {contactChannel === 'whatsapp' && (waOtpSent || waOtpError) && !whatsappVerified && (
+                      <div className="email-otp-card" data-testid="whatsapp-otp-box">
+                        <div className="email-otp-header">
+                          <strong>
+                            {waOtpSent
+                              ? 'Verify Your WhatsApp Number (Experimental)'
+                              : 'WhatsApp Verification Unavailable'}
+                          </strong>
+                          <span>
+                            {waOtpSent
+                              ? `Enter the 6-digit code sent via WhatsApp to ${formData.phone.trim()}`
+                              : `Unable to send WhatsApp OTP to ${formData.phone.trim() || 'this number'}.`}
+                          </span>
+                        </div>
+
+                        {waOtpSent && (
+                          <div className="email-otp-input-row">
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              maxLength={6}
+                              aria-label="WhatsApp verification 6-digit OTP"
+                              className="input-field email-otp-field"
+                              placeholder="Enter 6-digit OTP"
+                              value={waOtpInput}
+                              onChange={(e) => {
+                                setWaOtpInput(e.target.value.replace(/\D/g, '').slice(0, 6));
+                                if (waOtpError) setWaOtpError('');
+                              }}
+                              data-testid="whatsapp-otp-input"
+                            />
+                            <button
+                              type="button"
+                              className="btn-confirm-email-otp"
+                              onClick={handleVerifyWhatsAppOtp}
+                              disabled={verifyingWaOtp}
+                              data-testid="confirm-whatsapp-otp-button"
+                            >
+                              {verifyingWaOtp ? 'Verifying...' : 'Confirm OTP'}
+                            </button>
+                            <button
+                              type="button"
+                              className="btn-resend-email-otp"
+                              onClick={() => handleSendWhatsAppOtp(true)}
+                              disabled={sendingWaOtp || waResendCooldown > 0}
+                              data-testid="resend-whatsapp-otp-button"
+                            >
+                              {waResendCooldown > 0 ? `Resend (${waResendCooldown}s)` : 'Resend OTP'}
+                            </button>
+                          </div>
+                        )}
+
+                        {waOtpInfo && !waOtpError && (
+                          <p className="email-otp-info" data-testid="whatsapp-otp-info">{waOtpInfo}</p>
+                        )}
+                        {waOtpError && (
+                          <p className="error-text" data-testid="whatsapp-otp-error">{waOtpError}</p>
                         )}
                       </div>
                     )}
@@ -678,10 +1085,20 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
+                  {contactChannel === 'whatsapp' && !whatsappVerified && (
+                    <p className="whatsapp-lock-note" data-testid="place-order-lock-note">
+                      Verify your WhatsApp mobile number with the 6-digit OTP above to enable Place Order.
+                    </p>
+                  )}
+
                   <button
                     type="submit"
                     className="btn-place-order"
-                    disabled={submitting || Boolean(confirmedOrder)}
+                    disabled={
+                      submitting ||
+                      Boolean(confirmedOrder) ||
+                      (contactChannel === 'whatsapp' && !whatsappVerified)
+                    }
                     aria-busy={submitting}
                     data-testid="place-order-button"
                   >

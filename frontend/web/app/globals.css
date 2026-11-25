@@ -1,38 +1,47 @@
 :root {
-  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --bg-page: #f8fafc;
+  --font-bodoni-moda: 'Bodoni Moda', Didot, 'Bodoni MT', serif;
+  --font-pixelify-sans: 'Pixelify Sans', monospace, sans-serif;
+  --font-black-ops-one: 'Black Ops One', Impact, cursive;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+
+  /* Font preference hierarchy */
+  --font-primary: var(--font-bodoni-moda), 'Bodoni Moda', Didot, 'Bodoni MT', serif;
+  --font-secondary: var(--font-pixelify-sans), 'Pixelify Sans', monospace, sans-serif;
+  --font-accent: var(--font-black-ops-one), 'Black Ops One', Impact, cursive;
+  --font-family: var(--font-sans);
+  --bg-page: #f5f5f7;
   --bg-card: #ffffff;
-  --bg-subtle: #f1f5f9;
-  --bg-subtle-hover: #e2e8f0;
-  --border-light: #e2e8f0;
-  --border-focus: #3b82f6;
-  --border-selected: #2563eb;
+  --bg-subtle: #f5f5f7;
+  --bg-subtle-hover: #e8e8ed;
+  --border-light: rgba(0, 0, 0, 0.08);
+  --border-focus: #0071e3;
+  --border-selected: #0071e3;
   
-  --text-main: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
+  --text-main: #1d1d1f;
+  --text-secondary: #515154;
+  --text-muted: #86868b;
   --text-white: #ffffff;
 
-  --primary-blue: #2563eb;
-  --primary-blue-hover: #1d4ed8;
+  --primary-blue: #0071e3;
+  --primary-blue-hover: #0077ed;
   --primary-blue-light: #eff6ff;
 
-  --success-green: #10b981;
+  --success-green: #16a34a;
   --success-light: #ecfdf5;
-  --warning-amber: #f59e0b;
+  --warning-amber: #d97706;
   --warning-light: #fffbeb;
-  --danger-red: #ef4444;
-  --danger-light: #fef2f2;
+  --danger-red: #dc2626;
+  --danger-light: #fff2f2;
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-  --shadow-elevated: 0 12px 28px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
-  --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.045), 0 1px 3px rgba(0, 0, 0, 0.03);
+  --shadow-elevated: 0 12px 36px rgba(0, 0, 0, 0.07), 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-modal: 0 20px 44px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.06);
 
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 18px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 22px;
 }
 
 * {
@@ -3870,3 +3879,1219 @@ html, body {
 
 
 
+
+/* WhatsApp Experimental Verification & Protected Merchant Admin Console */
+.contact-channel-box {
+  margin-bottom: 1.1rem;
+  padding: 0.9rem 1rem;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.contact-channel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.65rem;
+}
+
+.contact-channel-sub {
+  font-size: 0.78rem;
+  color: #6e6e73;
+}
+
+.contact-channel-pills {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.channel-pill {
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  background: #ffffff;
+  color: #1d1d1f;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.channel-pill.active {
+  background: #0071e3;
+  border-color: #0071e3;
+  color: #ffffff;
+}
+
+.whatsapp-experimental-note {
+  margin: 0.55rem 0 0;
+  font-size: 0.78rem;
+  color: #475569;
+}
+
+.whatsapp-lock-note {
+  margin: 0 0 0.75rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: 10px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.btn-verify-whatsapp {
+  padding: 0.76rem 1rem;
+  border-radius: 11px;
+  border: none;
+  background: #16a34a;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.btn-verify-whatsapp:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.whatsapp-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.62rem 0.85rem;
+  border-radius: 11px;
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.admin-wa-shell {
+  min-height: 100vh;
+  background: #f5f5f7;
+  padding: 2.5rem 1.25rem;
+}
+
+.admin-wa-container {
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.admin-wa-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin-wa-header h1 {
+  margin: 0.2rem 0 0.35rem;
+  font-size: 1.8rem;
+  color: #1d1d1f;
+}
+
+.admin-wa-subtitle {
+  margin: 0;
+  color: #6e6e73;
+  font-size: 0.94rem;
+}
+
+.admin-wa-warning {
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  font-size: 0.86rem;
+  margin-bottom: 1.25rem;
+}
+
+.admin-wa-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.25rem;
+}
+
+.admin-wa-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  padding: 1.4rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.admin-wa-card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+  color: #1d1d1f;
+}
+
+.admin-wa-card-full {
+  grid-column: 1 / -1;
+}
+
+.admin-wa-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.85rem;
+}
+
+.admin-wa-badge {
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.admin-wa-badge.connected {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.admin-wa-badge.disconnected {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.admin-wa-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem 1rem;
+  margin: 0 0 1.1rem;
+}
+
+.admin-wa-meta dt {
+  font-size: 0.74rem;
+  color: #6e6e73;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-wa-meta dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.88rem;
+  color: #1d1d1f;
+  font-weight: 500;
+  word-break: break-word;
+}
+
+.admin-wa-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.admin-wa-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+  font-size: 0.82rem;
+  color: #515154;
+  cursor: pointer;
+}
+
+.admin-wa-qr-wrap {
+  text-align: center;
+}
+
+.admin-wa-qr-img {
+  width: 240px;
+  height: 240px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: #ffffff;
+  margin-bottom: 0.75rem;
+}
+
+.admin-wa-connected-box {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  background: #f0fdf4;
+  border-radius: 12px;
+  color: #166534;
+}
+
+.admin-wa-login-form,
+.admin-wa-test-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+/* ==========================================================================
+   Stickora Store — Full Apple-Inspired Minimalist Design System (2026)
+   Font stack: San Francisco-style system typography across storefront & gateway
+   ========================================================================== */
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+}
+
+*:focus-visible {
+  outline: 2.5px solid #0071e3;
+  outline-offset: 2px;
+}
+
+/* Minimal Top Bar & Translucent Frosted Storefront Navbar */
+.store-top-bar {
+  background: #1d1d1f;
+  color: #f5f5f7;
+  font-size: 0.76rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  padding: 0.45rem 1.5rem;
+}
+
+.store-header {
+  background: rgba(255, 255, 255, 0.84);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: none;
+}
+
+.store-nav {
+  padding: 0.85rem 1.5rem;
+  border-bottom: none;
+}
+
+.logo-sparkle {
+  color: #1d1d1f;
+  font-size: 1.2rem;
+}
+
+.logo-brand {
+  background: none;
+  -webkit-background-clip: initial;
+  -webkit-text-fill-color: initial;
+  color: #1d1d1f;
+  font-size: 1.32rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.logo-badge {
+  background: #f5f5f7;
+  color: #6e6e73;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 0.18rem 0.55rem;
+  border-radius: 9999px;
+}
+
+.store-search-input {
+  background: #f5f5f7;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 9999px;
+  padding: 0.6rem 2.75rem 0.6rem 1.1rem;
+  font-size: 0.88rem;
+  color: #1d1d1f;
+}
+
+.store-search-input::placeholder {
+  color: #86868b;
+}
+
+.store-search-input:focus {
+  background: #ffffff;
+  border-color: #0071e3;
+  box-shadow: 0 0 0 3.5px rgba(0, 113, 227, 0.16);
+}
+
+.store-nav-link {
+  color: #1d1d1f;
+  font-size: 0.86rem;
+  font-weight: 500;
+  opacity: 0.82;
+  transition: opacity 0.16s ease, color 0.16s ease;
+}
+
+.store-nav-link:hover {
+  color: #0071e3;
+  opacity: 1;
+}
+
+.store-cart-button {
+  background: #1d1d1f;
+  color: #ffffff;
+  padding: 0.52rem 1.05rem;
+  border-radius: 9999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.store-cart-button:hover {
+  background: #0071e3;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 113, 227, 0.28);
+}
+
+.cart-count-badge {
+  background: rgba(255, 255, 255, 0.96);
+  color: #1d1d1f;
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+/* Minimalist Studio Hero Section */
+.store-page-root,
+.store-page {
+  background: #f5f5f7;
+  color: #1d1d1f;
+}
+
+.store-hero {
+  max-width: 1200px;
+  margin: 2rem auto 1.75rem;
+  padding: 3.75rem 3.25rem;
+  background: linear-gradient(145deg, #ffffff 0%, #f5f5f7 68%, #edf2f7 100%);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 26px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.045);
+  gap: 2.5rem;
+}
+
+.hero-tag-badge {
+  background: rgba(0, 113, 227, 0.09);
+  color: #0071e3;
+  border: 1px solid rgba(0, 113, 227, 0.16);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.35rem 0.85rem;
+  box-shadow: none;
+}
+
+.hero-title {
+  font-size: clamp(2.1rem, 3.6vw, 3.05rem);
+  font-weight: 700;
+  line-height: 1.09;
+  letter-spacing: -0.035em;
+  color: #1d1d1f;
+  margin-bottom: 1.1rem;
+}
+
+.hero-subtitle {
+  font-size: 1.08rem;
+  line-height: 1.55;
+  color: #515154;
+  max-width: 54ch;
+  margin-bottom: 1.65rem;
+}
+
+.hero-perks {
+  gap: 0.55rem;
+  margin-bottom: 2rem;
+}
+
+.hero-perk-item {
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 9999px;
+  padding: 0.38rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1d1d1f;
+}
+
+.hero-btn-primary {
+  background: linear-gradient(180deg, #0077ed 0%, #0066cc 100%);
+  color: #ffffff;
+  border-radius: 9999px;
+  padding: 0.88rem 1.75rem;
+  font-size: 0.94rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  box-shadow: 0 6px 20px rgba(0, 113, 227, 0.25);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease;
+}
+
+.hero-btn-primary:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0 10px 28px rgba(0, 113, 227, 0.34);
+}
+
+.hero-btn-secondary {
+  background: #ffffff;
+  color: #1d1d1f;
+  border: 1px solid rgba(0, 0, 0, 0.14);
+  border-radius: 9999px;
+  padding: 0.88rem 1.55rem;
+  font-size: 0.94rem;
+  font-weight: 600;
+  transition: background 0.16s ease, transform 0.2s ease, border-color 0.16s ease;
+}
+
+.hero-btn-secondary:hover {
+  background: #fbfbfd;
+  border-color: rgba(0, 0, 0, 0.26);
+  transform: translateY(-1px);
+}
+
+.hero-sticker-cluster {
+  padding: 1.25rem;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 12px 30px rgba(0, 0, 0, 0.04);
+}
+
+.cluster-img {
+  padding: 0.6rem;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.07));
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.cluster-img:hover {
+  transform: scale(1.06) translateY(-2px);
+}
+
+/* Category Pills */
+.category-pills-bar {
+  background: transparent;
+  border-bottom: none;
+  padding: 0.5rem 1.5rem 0.25rem;
+}
+
+.category-pill {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: #1d1d1f;
+  border-radius: 9999px;
+  padding: 0.52rem 1.05rem;
+  font-size: 0.84rem;
+  font-weight: 500;
+  transition: all 0.18s ease;
+}
+
+.category-pill:hover {
+  border-color: rgba(0, 0, 0, 0.22);
+  background: #ffffff;
+  transform: translateY(-1px);
+}
+
+.category-pill.active {
+  background: #1d1d1f;
+  border-color: #1d1d1f;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+/* Sections & Gallery Product Cards */
+.store-main-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem 4rem;
+}
+
+.store-section {
+  max-width: 1200px;
+  margin: 2.5rem auto;
+}
+
+.section-header {
+  margin-bottom: 1.5rem;
+}
+
+.section-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  letter-spacing: -0.028em;
+  color: #1d1d1f;
+}
+
+.section-subtitle {
+  font-size: 0.96rem;
+  color: #6e6e73;
+  margin-top: 0.25rem;
+}
+
+.product-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.24s ease, border-color 0.24s ease;
+  overflow: hidden;
+}
+
+.product-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+
+.product-img-wrapper {
+  background: #f5f5f7;
+  border-radius: 14px;
+  margin: 0.85rem 0.85rem 0.25rem;
+  padding: 1.35rem;
+}
+
+.product-img {
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.product-card:hover .product-img {
+  transform: scale(1.06);
+}
+
+.product-info {
+  padding: 0.85rem 1.15rem 1.15rem;
+}
+
+.product-category-tag {
+  color: #0071e3;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.product-name {
+  color: #1d1d1f;
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+.product-price {
+  color: #1d1d1f;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.add-to-cart-btn {
+  background: #1d1d1f;
+  color: #ffffff;
+  border-radius: 9999px;
+  padding: 0.52rem 0.95rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: background 0.16s ease, transform 0.16s ease;
+}
+
+.add-to-cart-btn:hover:not(:disabled) {
+  background: #0071e3;
+  transform: translateY(-1px);
+}
+
+.add-to-cart-btn.added {
+  background: #16a34a;
+}
+
+/* Product Detail Studio Layout */
+.product-detail-page {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+.gallery-main {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 24px;
+  padding: 2.5rem;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.045);
+}
+
+.detail-info {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 24px;
+  padding: 2rem 2.25rem;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.045);
+}
+
+.detail-title {
+  font-size: 2.05rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #1d1d1f;
+}
+
+.detail-price {
+  color: #1d1d1f;
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Checkout Contact & OTP Clarity Polish */
+.checkout-contact-group {
+  background: #fbfbfd;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  border-radius: 16px;
+  padding: 1.15rem 1.2rem;
+  margin-bottom: 1.15rem;
+}
+
+.checkout-contact-group-title {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: #1d1d1f;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.75rem;
+}
+
+.contact-channel-box {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 14px;
+  padding: 0.95rem 1rem;
+}
+
+.email-otp-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 113, 227, 0.25);
+  box-shadow: 0 6px 20px rgba(0, 113, 227, 0.06);
+  border-radius: 16px;
+  padding: 1.15rem 1.2rem;
+}
+
+.email-otp-field {
+  max-width: 190px;
+  height: 46px;
+  font-size: 1.05rem;
+  letter-spacing: 0.26em;
+  border-radius: 12px;
+  background: #f5f5f7;
+}
+
+.btn-verify-email,
+.btn-verify-whatsapp,
+.btn-confirm-email-otp,
+.btn-resend-email-otp {
+  min-height: 44px;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: transform 0.14s ease, opacity 0.14s ease, background 0.14s ease;
+}
+
+.btn-verify-email:hover:not(:disabled),
+.btn-verify-whatsapp:hover:not(:disabled),
+.btn-confirm-email-otp:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+/* Unified Gateway, Payment OTP & Results Styling */
+.site-header {
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: none;
+}
+
+.brand-badge {
+  background: #1d1d1f;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.brand-tag {
+  color: #0071e3;
+}
+
+.payment-main-card,
+.order-summary-card,
+.otp-card-container,
+.result-card,
+.order-confirmation-container {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 22px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.045);
+}
+
+.primary-pay-button {
+  background: linear-gradient(180deg, #0077ed 0%, #0066cc 100%);
+  border-radius: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  box-shadow: 0 6px 20px rgba(0, 113, 227, 0.26);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
+}
+
+.primary-pay-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(0, 113, 227, 0.34);
+}
+
+.otp-input-box {
+  border-radius: 14px;
+  border: 1.5px solid rgba(0, 0, 0, 0.14);
+  background: #fbfbfd;
+  letter-spacing: 0.35em;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.otp-input-box:focus {
+  background: #ffffff;
+  border-color: #0071e3;
+  box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.16);
+  outline: none;
+}
+
+/* Store Footer Apple-Style Restraint */
+.store-footer {
+  background: #ffffff;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  color: #515154;
+}
+
+.footer-col h4 {
+  color: #1d1d1f;
+}
+
+.footer-bottom {
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  color: #6e6e73;
+}
+
+/* Mobile & Reduced-Motion Polish */
+@media (max-width: 768px) {
+  .store-hero {
+    margin: 1rem;
+    padding: 2rem 1.4rem;
+    grid-template-columns: 1fr;
+    border-radius: 20px;
+  }
+  .hero-title {
+    font-size: 1.95rem;
+  }
+  .store-main-content {
+    padding: 0.5rem 1rem 2.75rem;
+  }
+  .checkout-contact-group {
+    padding: 0.9rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ==========================================================================
+   STICKORA THREE-TIER GOOGLE FONTS TYPOGRAPHY SYSTEM
+   Preference Order:
+     1st Preference — Bodoni Moda (Primary Display & Headings, Luxury/Editorial)
+     2nd Preference — Pixelify Sans (Secondary UI, Badges, Category Labels, Nav)
+     3rd Preference — Black Ops One (Accent Promotional Badges & Banners)
+     Functional & Body UI — Apple-inspired Sans-serif
+   ========================================================================== */
+
+/* 1. First Preference — Bodoni Moda */
+.font-primary,
+.hero-title,
+.main-page-heading,
+.cart-title,
+.checkout-main-title,
+.detail-title,
+.confirmation-title,
+.catalogue-heading,
+.admin-page-title,
+.result-title,
+.section-title,
+.order-summary-title,
+.payment-panel-title,
+.otp-modal-title,
+.otp-heading,
+.product-name,
+.product-name-link,
+.cart-item-title,
+.order-item-name,
+.review-item-name,
+.receipt-prod-name,
+.footer-col h4,
+.logo-brand,
+.checkout-contact-group-title,
+.admin-section-title,
+.form-header h2 {
+  font-family: var(--font-primary) !important;
+}
+
+/* 2. Second Preference — Pixelify Sans */
+.font-secondary,
+.store-nav-link,
+.cart-label,
+.category-pill,
+.category-pill span,
+.product-category-tag,
+.logo-badge,
+.cart-count-pill,
+.checkout-step-pill,
+.step-pill,
+.product-specs span {
+  font-family: var(--font-secondary) !important;
+}
+
+/* 3. Third Preference — Black Ops One (Promotional Badges & Accent Callouts Only) */
+.font-accent,
+.badge,
+.badge.best-seller,
+.badge.featured,
+.badge.new,
+.hero-tag-badge,
+.promo-badge,
+.sandbox-pill-tag,
+.limited-edition-tag,
+.discount-label {
+  font-family: var(--font-accent) !important;
+  font-weight: 400 !important;
+  text-transform: uppercase !important;
+}
+
+/* 4. Body Text & Functional UI — Sans-serif */
+.font-sans,
+body,
+p,
+.hero-subtitle,
+.section-subtitle,
+.hero-perk-item,
+.product-specs,
+.product-description,
+.footer-description,
+.cart-empty-text,
+.instruction-text,
+.field-help,
+.form-subtext,
+.confirmation-lead,
+.result-subtitle,
+.empty-cart-subtitle,
+button,
+.btn,
+.hero-btn-primary,
+.hero-btn-secondary,
+.add-to-cart-btn,
+.primary-pay-button,
+.btn-primary-checkout,
+.btn-verify-email,
+.btn-verify-whatsapp,
+.btn-confirm-email-otp,
+.btn-resend-email-otp,
+.store-search-button,
+.btn-pay-now,
+.btn-continue-shopping,
+.reset-button,
+label,
+.form-label,
+.input-label,
+input,
+select,
+textarea,
+.form-input,
+.store-search-input,
+.email-otp-field,
+.otp-input-box,
+.input-field {
+  font-family: var(--font-sans);
+}
+
+/* ==========================================================================
+   DESKTOP FONT SIZES (DEFAULT)
+   ========================================================================== */
+
+/* Hero Title: Bodoni Moda (64px desktop / 40px mobile) */
+.hero-title {
+  font-size: 64px !important;
+  line-height: 1.12 !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.025em !important;
+}
+
+/* Main Page Headings: Bodoni Moda (48px desktop / 34px mobile) */
+.main-page-heading,
+.cart-title,
+.checkout-main-title,
+.detail-title,
+.confirmation-title,
+.catalogue-heading,
+h1.catalogue-heading,
+.admin-page-title,
+.result-title {
+  font-size: 48px !important;
+  line-height: 1.2 !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+}
+
+/* Section Headings: Bodoni Moda (36px desktop / 28px mobile) */
+.section-title,
+.order-summary-title,
+.payment-panel-title,
+.otp-modal-title,
+.otp-heading,
+.admin-section-title,
+.merchant-name {
+  font-size: 36px !important;
+  line-height: 1.25 !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.015em !important;
+}
+
+/* Product Titles: Bodoni Moda (24px desktop / 21px mobile) */
+.product-name,
+.product-name-link,
+.cart-item-title,
+.order-item-name,
+.review-item-name,
+.receipt-prod-name {
+  font-size: 24px !important;
+  line-height: 1.3 !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Footer Headings: Bodoni Moda (24px desktop / 21px mobile) */
+.footer-col h4,
+.footer-col h3 {
+  font-size: 24px !important;
+  line-height: 1.3 !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Body Text: Sans-serif (16px desktop / 15px mobile) */
+body,
+p,
+.hero-subtitle,
+.section-subtitle,
+.footer-description,
+.instruction-text,
+.confirmation-lead,
+.result-subtitle,
+.empty-cart-subtitle {
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+/* Navigation: Pixelify Sans (15px desktop / 14px mobile) */
+.store-nav-link,
+.cart-label {
+  font-size: 15px !important;
+  letter-spacing: 0.02em !important;
+  font-weight: 500;
+}
+
+/* Category Labels: Pixelify Sans (14px desktop / 12px mobile) */
+.category-pill,
+.category-pill span,
+.product-category-tag {
+  font-size: 14px !important;
+  letter-spacing: 0.03em !important;
+  font-weight: 500;
+}
+
+/* Promotional Badges: Black Ops One (18px desktop / 15px mobile) */
+.badge,
+.badge.best-seller,
+.badge.featured,
+.badge.new,
+.hero-tag-badge,
+.promo-badge,
+.sandbox-pill-tag,
+.limited-edition-tag,
+.discount-label {
+  font-size: 18px !important;
+  letter-spacing: 0.04em !important;
+  line-height: 1.15 !important;
+  padding: 0.28rem 0.65rem !important;
+}
+
+/* Buttons: Sans-serif (15px desktop / 14px mobile) */
+button,
+.btn,
+.hero-btn-primary,
+.hero-btn-secondary,
+.add-to-cart-btn,
+.primary-pay-button,
+.btn-primary-checkout,
+.btn-verify-email,
+.btn-verify-whatsapp,
+.btn-confirm-email-otp,
+.btn-resend-email-otp,
+.store-search-button,
+.btn-pay-now,
+.btn-continue-shopping,
+.reset-button {
+  font-size: 15px !important;
+  font-weight: 600 !important;
+}
+
+/* Form Labels: Sans-serif (14px desktop / 14px mobile) */
+label,
+.form-label,
+.input-label {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+/* Form Inputs: Sans-serif (16px desktop / 16px mobile) */
+input,
+select,
+textarea,
+.form-input,
+.store-search-input,
+.email-otp-field,
+.otp-input-box,
+.input-field {
+  font-size: 16px !important;
+}
+
+/* ==========================================================================
+   MOBILE RESPONSIVE FONT SIZES (max-width: 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+  /* Hero Title: Bodoni Moda (40px mobile) */
+  .hero-title {
+    font-size: 40px !important;
+    line-height: 1.15 !important;
+  }
+
+  /* Main Page Headings: Bodoni Moda (34px mobile) */
+  .main-page-heading,
+  .cart-title,
+  .checkout-main-title,
+  .detail-title,
+  .confirmation-title,
+  .catalogue-heading,
+  h1.catalogue-heading,
+  .admin-page-title,
+  .result-title {
+    font-size: 34px !important;
+    line-height: 1.2 !important;
+  }
+
+  /* Section Headings: Bodoni Moda (28px mobile) */
+  .section-title,
+  .order-summary-title,
+  .payment-panel-title,
+  .otp-modal-title,
+  .otp-heading,
+  .admin-section-title,
+  .merchant-name {
+    font-size: 28px !important;
+    line-height: 1.25 !important;
+  }
+
+  /* Product Titles: Bodoni Moda (21px mobile) */
+  .product-name,
+  .product-name-link,
+  .cart-item-title,
+  .order-item-name,
+  .review-item-name,
+  .receipt-prod-name {
+    font-size: 21px !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Footer Headings: Bodoni Moda (21px mobile) */
+  .footer-col h4,
+  .footer-col h3 {
+    font-size: 21px !important;
+    line-height: 1.3 !important;
+  }
+
+  /* Body Text: Sans-serif (15px mobile) */
+  body,
+  p,
+  .hero-subtitle,
+  .section-subtitle,
+  .footer-description,
+  .instruction-text,
+  .confirmation-lead,
+  .result-subtitle,
+  .empty-cart-subtitle {
+    font-size: 15px !important;
+  }
+
+  /* Navigation: Pixelify Sans (14px mobile) */
+  .store-nav-link,
+  .cart-label {
+    font-size: 14px !important;
+  }
+
+  /* Category Labels: Pixelify Sans (12px mobile) */
+  .category-pill,
+  .category-pill span,
+  .product-category-tag {
+    font-size: 12px !important;
+  }
+
+  /* Promotional Badges: Black Ops One (15px mobile) */
+  .badge,
+  .badge.best-seller,
+  .badge.featured,
+  .badge.new,
+  .hero-tag-badge,
+  .promo-badge,
+  .sandbox-pill-tag,
+  .limited-edition-tag,
+  .discount-label {
+    font-size: 15px !important;
+  }
+
+  /* Buttons: Sans-serif (14px mobile) */
+  button,
+  .btn,
+  .hero-btn-primary,
+  .hero-btn-secondary,
+  .add-to-cart-btn,
+  .primary-pay-button,
+  .btn-primary-checkout,
+  .btn-verify-email,
+  .btn-verify-whatsapp,
+  .btn-confirm-email-otp,
+  .btn-resend-email-otp,
+  .store-search-button,
+  .btn-pay-now,
+  .btn-continue-shopping,
+  .reset-button {
+    font-size: 14px !important;
+  }
+
+  /* Form Labels: Sans-serif (14px mobile) */
+  label,
+  .form-label,
+  .input-label {
+    font-size: 14px !important;
+  }
+
+  /* Form Inputs: Sans-serif (16px mobile) */
+  input,
+  select,
+  textarea,
+  .form-input,
+  .store-search-input,
+  .email-otp-field,
+  .otp-input-box,
+  .input-field {
+    font-size: 16px !important;
+  }
+}

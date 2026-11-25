@@ -10,6 +10,11 @@ if backend_dir not in sys.path:
     sys.path.insert(0, backend_dir)
 
 from app.main import app
+from app.core.config import settings
+
+# Safeguard: never dispatch real WhatsApp messages during automated Pytest suites
+# unless a specific mock/integration test explicitly toggles and restores this flag.
+settings.whatsapp_dispatch_enabled = False
 
 
 @pytest.fixture(scope="session")

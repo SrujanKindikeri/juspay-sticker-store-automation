@@ -53,13 +53,21 @@ coverage.xml
 !.env.example
 !frontend/web/.env.example
 
-# Database & Local Dumps
+# Database, WhatsApp Session & Local Dumps
 *.sqlite
 *.sqlite3
 *.db
+*.db-wal
+*.db-shm
 *.sql
 *.dump
 *.bak
+data/
+**/data/
+**/berry_auth/
+**/whatsapp_session.json
+**/berry_store.db*
+services/**/node_modules/
 
 # Automation & Playwright
 test-results/
