@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <linearGradient id="cup" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <rect width="190" height="190" x="5" y="5" rx="35" fill="#ffffff" stroke="#e2e8f0" stroke-width="4"/>
+  <rect width="170" height="170" x="15" y="15" rx="28" fill="#fef3c7"/>
+  <path d="M80,50 Q70,35 80,20" stroke="#b45309" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M100,45 Q110,30 100,18" stroke="#b45309" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M120,50 Q110,35 120,20" stroke="#b45309" stroke-width="4" fill="none" stroke-linecap="round"/>
+  <path d="M140,80 C170,80 170,130 140,130" stroke="#1d4ed8" stroke-width="12" fill="none"/>
+  <path d="M50,70 L140,70 L130,150 Q130,165 95,165 Q60,165 60,150 Z" fill="url(#cup)"/>
+  <rect x="68" y="92" width="54" height="38" rx="8" fill="#0f172a"/>
+  <text x="74" y="117" font-family="monospace" font-size="18" font-weight="bold" fill="#10b981">&lt;/&gt;</text>
+</svg>

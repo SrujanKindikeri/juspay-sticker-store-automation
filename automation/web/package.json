@@ -1,0 +1,34 @@
+{
+  "name": "juspay-playwright-automation",
+  "version": "1.0.0",
+  "description": "Playwright Automation Framework for JUSPAY Simulated Payment Gateway",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:card": "playwright test tests/card-payment.spec.ts",
+    "test:upi": "playwright test tests/upi-payment.spec.ts",
+    "test:netbanking": "playwright test tests/netbanking-payment.spec.ts",
+    "test:negative": "playwright test tests/negative-scenarios.spec.ts",
+    "test:outcomes": "playwright test tests/payment-outcomes.spec.ts",
+    "typecheck": "tsc --noEmit",
+    "report": "playwright show-report"
+  },
+  "keywords": [
+    "playwright",
+    "automation",
+    "payment-gateway",
+    "juspay",
+    "testing"
+  ],
+  "author": "JUSPAY Automation Challenge Team",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^22.9.0",
+    "@types/pg": "^8.11.10",
+    "dotenv": "^16.4.5",
+    "pg": "^8.13.1",
+    "typescript": "^5.6.3"
+  }
+}

@@ -1,0 +1,13 @@
+from fastapi import APIRouter
+from app.routes.health import router as health_router
+from app.routes.payment import router as payment_router
+from app.routes.otp import router as otp_router
+from app.routes.store import router as store_router
+
+api_router = APIRouter()
+api_router.include_router(health_router, prefix="")
+api_router.include_router(payment_router, prefix="")
+api_router.include_router(otp_router, prefix="")
+api_router.include_router(store_router, prefix="")
+
+__all__ = ["api_router"]
