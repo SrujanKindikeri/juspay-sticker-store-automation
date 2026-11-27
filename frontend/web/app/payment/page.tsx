@@ -8,6 +8,7 @@ import { PaymentMethodSelector } from '@/components/PaymentMethodSelector';
 import { CardPaymentPanel } from '@/components/CardPaymentPanel';
 import { UpiPaymentPanel } from '@/components/UpiPaymentPanel';
 import { NetBankingPaymentPanel } from '@/components/NetBankingPaymentPanel';
+import { PaytmPaymentPanel } from '@/components/PaytmPaymentPanel';
 import { PaymentAction } from '@/components/PaymentAction';
 import { OtpVerification } from '@/components/OtpVerification';
 import {
@@ -18,6 +19,8 @@ import {
   UpiFormData,
   NetBankingFormData,
   PaymentInitiateResponse,
+  PaytmConfig,
+  PaytmInitiateResponse,
 } from '@/types/checkout';
 
 const demoOrder: OrderDetails = {
@@ -70,6 +73,10 @@ export default function CheckoutPage() {
   const [storeOrder, setStoreOrder] = useState<any>(null);
   const [orderToken, setOrderToken] = useState<string>('');
 
+  // Paytm Sandbox Integration state
+  const [paytmConfig, setPaytmConfig] = useState<PaytmConfig | null>(null);
+  const [paytmSandboxOutcome, setPaytmSandboxOutcome] = useState<'SUCCESS' | 'FAILED' | 'PENDING'>('SUCCESS');
+
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 
   const checkHealth = async () => {
@@ -92,6 +99,19 @@ export default function CheckoutPage() {
     checkHealth();
     const interval = setInterval(checkHealth, 20000);
 
+    // Fetch Paytm configuration
+    fetch(`${apiUrl}/api/v1/payments/paytm/config`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((cfg: PaytmConfig | null) => {
+        if (cfg) {
+          setPaytmConfig(cfg);
+          if (cfg.provider === 'paytm') {
+            setSelectedMethod('paytm');
+          }
+        }
+      })
+      .catch(() => {});
+
     // Support test scenario parameter and authoritative transaction lookup on page refresh
     if (typeof window !== 'undefined') {
       const isProduction = process.env.NEXT_PUBLIC_APP_ENV === 'production';
@@ -100,9 +120,75 @@ export default function CheckoutPage() {
       const customOrderId = params.get('order_id');
       const txnId = params.get('transaction_id');
       const tokenParam = params.get('token');
+      const methodParam = params.get('method');
+      const paytmStatusParam = params.get('paytm_status');
 
       if (tokenParam) {
         setOrderToken(tokenParam);
+      }
+
+      if (methodParam === 'paytm') {
+        setSelectedMethod('paytm');
+      }
+
+      // Handle return redirect from Paytm Callback
+      if (paytmStatusParam && customOrderId) {
+        const reconcilePaytmRedirect = async () => {
+          setIsLoading(true);
+          setProcessingLabel('Reconciling authoritative Paytm transaction status...');
+          try {
+            const res = await fetch(`${apiUrl}/api/v1/payments/paytm/status/${customOrderId}`);
+            if (res.ok) {
+              const data = await res.json();
+              if (data.status === 'SUCCESS') {
+                setCompletedPayment({
+                  transaction_id: data.transaction_id,
+                  payment_reference: data.payment_reference,
+                  order_id: data.order_id,
+                  amount: data.amount,
+                  currency: 'INR',
+                  payment_method: 'PAYTM',
+                  status: 'SUCCESS',
+                  gateway_transaction_id: data.gateway_transaction_id,
+                });
+                setStep('success');
+                setStoreOrder((prev: any) => (prev ? { ...prev, status: 'PAID' } : null));
+                await syncStoreOrderFromBackend();
+              } else if (data.status === 'FAILED') {
+                setCompletedPayment({
+                  transaction_id: data.transaction_id,
+                  payment_reference: data.payment_reference,
+                  order_id: data.order_id,
+                  amount: data.amount,
+                  currency: 'INR',
+                  payment_method: 'PAYTM',
+                  status: 'FAILED',
+                });
+                setFailureReason(data.gateway_response_msg || 'Paytm payment was declined or failed.');
+                setStep('failed');
+                await syncStoreOrderFromBackend();
+              } else {
+                setStep('pending');
+              }
+            }
+          } catch (e) {
+            console.error('Failed to reconcile Paytm redirect', e);
+          } finally {
+            setIsLoading(false);
+            setProcessingLabel('');
+          }
+        };
+        reconcilePaytmRedirect();
+      }
+
+      if (tokenParam) {
+        setOrderToken(tokenParam);
+      }
+
+      if (scenario === 'DECLINED' || scenario === 'FAILED') {
+        setPaytmSandboxOutcome('FAILED');
+      } else if (scenario === 'PENDING') {
+        setPaytmSandboxOutcome('PENDING');
       }
 
       if (!isProduction) {
@@ -346,6 +432,108 @@ export default function CheckoutPage() {
       setStep('otp');
     } catch (err: any) {
       setPaymentError(err.message || 'Network error: Unable to connect to payment server.');
+    } finally {
+      submitPaymentLockRef.current = false;
+      setIsLoading(false);
+      setProcessingLabel('');
+    }
+  };
+
+  const handlePayWithPaytm = async (sandboxOutcome: 'SUCCESS' | 'FAILED' | 'PENDING' = 'SUCCESS') => {
+    if (submitPaymentLockRef.current || isLoading) return;
+    setPaymentError(null);
+    submitPaymentLockRef.current = true;
+    setIsLoading(true);
+    setProcessingLabel('Initiating secure Paytm Sandbox session (txnToken)...');
+
+    try {
+      let customerEmail = 'tester@stickora.store';
+      if (storeOrder?.delivery?.email) {
+        customerEmail = storeOrder.delivery.email;
+      }
+
+      // Step 1: Initiate Paytm transaction
+      const initiateRes = await fetch(`${apiUrl}/api/v1/payments/paytm/initiate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order_id: orderInfo.orderId,
+          amount: orderInfo.amount,
+          currency: orderInfo.currency,
+          customer_email: customerEmail,
+        }),
+      });
+
+      if (!initiateRes.ok) {
+        const errData = await initiateRes.json().catch(() => ({}));
+        throw new Error(errData.detail || `Paytm initiation failed (HTTP ${initiateRes.status})`);
+      }
+
+      const initData: PaytmInitiateResponse = await initiateRes.json();
+      setProcessingLabel('Executing Paytm transaction verification...');
+
+      // Step 2: Trigger callback with selected outcome
+      const callbackPayload = {
+        ORDERID: initData.order_id,
+        TXNID: `PTM_GW_${Date.now()}`,
+        TXNAMOUNT: initData.amount.toFixed(2),
+        STATUS: sandboxOutcome === 'SUCCESS' ? 'TXN_SUCCESS' : sandboxOutcome === 'FAILED' ? 'TXN_FAILURE' : 'PENDING',
+        RESPCODE: sandboxOutcome === 'SUCCESS' ? '01' : '227',
+        RESPMSG: sandboxOutcome === 'SUCCESS' ? 'Txn Success' : 'Payment Failed by Bank Simulator',
+        CHECKSUMHASH: 'MOCK_VALID_CHECKSUM',
+      };
+
+      const cbRes = await fetch(`${apiUrl}/api/v1/payments/paytm/callback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(callbackPayload),
+      });
+
+      if (!cbRes.ok) {
+        const cbErr = await cbRes.json().catch(() => ({}));
+        throw new Error(cbErr.detail || 'Callback processing failed');
+      }
+
+      // Step 3: Authoritative verification from backend
+      setProcessingLabel('Reconciling authoritative payment status...');
+      const statusRes = await fetch(`${apiUrl}/api/v1/payments/paytm/status/${initData.order_id}`);
+      if (!statusRes.ok) {
+        throw new Error('Unable to retrieve authoritative Paytm transaction status.');
+      }
+
+      const verified = await statusRes.json();
+      if (verified.status === 'SUCCESS') {
+        setCompletedPayment({
+          transaction_id: verified.transaction_id,
+          payment_reference: verified.payment_reference,
+          order_id: verified.order_id,
+          amount: verified.amount,
+          currency: 'INR',
+          payment_method: 'PAYTM',
+          status: 'SUCCESS',
+          gateway_transaction_id: verified.gateway_transaction_id,
+        });
+        setStep('success');
+        setStoreOrder((prev: any) => (prev ? { ...prev, status: 'PAID' } : null));
+        await syncStoreOrderFromBackend();
+      } else if (verified.status === 'FAILED') {
+        setCompletedPayment({
+          transaction_id: verified.transaction_id,
+          payment_reference: verified.payment_reference,
+          order_id: verified.order_id,
+          amount: verified.amount,
+          currency: 'INR',
+          payment_method: 'PAYTM',
+          status: 'FAILED',
+        });
+        setFailureReason(verified.gateway_response_msg || 'Paytm payment was declined.');
+        setStep('failed');
+        await syncStoreOrderFromBackend();
+      } else {
+        setStep('pending');
+      }
+    } catch (err: any) {
+      setPaymentError(err?.message || 'Error occurred during Paytm payment processing.');
     } finally {
       submitPaymentLockRef.current = false;
       setIsLoading(false);
@@ -647,6 +835,7 @@ export default function CheckoutPage() {
                 <PaymentMethodSelector
                   selectedMethod={selectedMethod}
                   onSelectMethod={setSelectedMethod}
+                  paytmAvailable={true}
                 />
 
                 {/* Contextual Payment Details Panel */}
@@ -662,6 +851,18 @@ export default function CheckoutPage() {
                     onChange={setNetBankingData}
                   />
                 )}
+                {selectedMethod === 'paytm' && (
+                  <PaytmPaymentPanel
+                    orderId={orderInfo.orderId}
+                    amount={orderInfo.amount}
+                    currency={orderInfo.currency}
+                    config={paytmConfig}
+                    isLoading={isLoading}
+                    onPayWithPaytm={handlePayWithPaytm}
+                    sandboxOutcome={paytmSandboxOutcome}
+                    onOutcomeChange={setPaytmSandboxOutcome}
+                  />
+                )}
 
                 {/* Error Banner */}
                 {paymentError && (
@@ -671,11 +872,13 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                {/* Continue to Payment Action */}
-                <PaymentAction
-                  amount={orderInfo.amount}
-                  isLoading={isLoading}
-                />
+                {/* Continue to Payment Action for Simulated Methods */}
+                {selectedMethod !== 'paytm' && (
+                  <PaymentAction
+                    amount={orderInfo.amount}
+                    isLoading={isLoading}
+                  />
+                )}
               </form>
             )}
 

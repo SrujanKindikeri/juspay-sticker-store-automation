@@ -11,10 +11,33 @@ if backend_dir not in sys.path:
 
 from app.main import app
 from app.core.config import settings
+from app.database.session import SessionLocal
+from app.models.store import Product
+from app.services.store_service import SAMPLE_PRODUCTS
 
 # Safeguard: never dispatch real WhatsApp messages during automated Pytest suites
 # unless a specific mock/integration test explicitly toggles and restores this flag.
 settings.whatsapp_dispatch_enabled = False
+
+
+@pytest.fixture(scope="session", autouse=True)
+def ensure_test_inventory():
+    """Ensure catalog products have sufficient stock for test runs."""
+    db = SessionLocal()
+    try:
+        updated = False
+        for prod_data in SAMPLE_PRODUCTS:
+            prod = db.query(Product).filter(Product.id == prod_data["id"]).first()
+            if not prod:
+                db.add(Product(**prod_data))
+                updated = True
+            elif prod.stock_quantity < 10:
+                prod.stock_quantity = prod_data["stock_quantity"]
+                updated = True
+        if updated:
+            db.commit()
+    finally:
+        db.close()
 
 
 @pytest.fixture(scope="session")

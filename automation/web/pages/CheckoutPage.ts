@@ -27,6 +27,12 @@ export class CheckoutPage extends BasePage {
   readonly cardMethodTab: Locator;
   readonly upiMethodTab: Locator;
   readonly netbankingMethodTab: Locator;
+  readonly paytmMethodTab: Locator;
+  readonly paytmPaymentPanel: Locator;
+  readonly payViaPaytmButton: Locator;
+  readonly paytmScenarioSuccess: Locator;
+  readonly paytmScenarioFailed: Locator;
+  readonly paytmScenarioPending: Locator;
 
   // Card form inputs
   readonly cardNumberInput: Locator;
@@ -58,6 +64,12 @@ export class CheckoutPage extends BasePage {
     this.cardMethodTab = page.locator('[data-testid="card-method"], [data-testid="payment-method-card"]');
     this.upiMethodTab = page.locator('[data-testid="upi-method"], [data-testid="payment-method-upi"]');
     this.netbankingMethodTab = page.locator('[data-testid="netbanking-method"], [data-testid="payment-method-netbanking"]');
+    this.paytmMethodTab = page.locator('[data-testid="paytm-method"]');
+    this.paytmPaymentPanel = page.locator('[data-testid="paytm-payment-panel"]');
+    this.payViaPaytmButton = page.locator('[data-testid="pay-via-paytm-btn"]');
+    this.paytmScenarioSuccess = page.locator('[data-testid="paytm-scenario-success"]');
+    this.paytmScenarioFailed = page.locator('[data-testid="paytm-scenario-failed"]');
+    this.paytmScenarioPending = page.locator('[data-testid="paytm-scenario-pending"]');
 
     this.cardNumberInput = page.locator('[data-testid="input-card-number"]');
     this.cardExpiryInput = page.locator('[data-testid="input-card-expiry"]');
@@ -106,6 +118,18 @@ export class CheckoutPage extends BasePage {
   async selectNetBankingMethod(): Promise<void> {
     await this.netbankingMethodTab.click();
     await expect(this.bankSelect).toBeVisible();
+  }
+
+  async selectPaytmMethod(): Promise<void> {
+    await expect(this.paytmMethodTab).toBeVisible({ timeout: 15_000 });
+    await this.paytmMethodTab.click();
+    try {
+      await expect(this.paytmPaymentPanel).toBeVisible({ timeout: 3_000 });
+    } catch {
+      // Retry click once if initial click occurred during Next.js client-side hydration
+      await this.paytmMethodTab.click();
+      await expect(this.paytmPaymentPanel).toBeVisible({ timeout: 10_000 });
+    }
   }
 
   async fillCardDetails(details: CardDetailsInput): Promise<void> {

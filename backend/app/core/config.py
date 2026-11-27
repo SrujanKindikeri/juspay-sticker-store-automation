@@ -66,6 +66,19 @@ class Settings(BaseSettings):
     whatsapp_rate_limit_window_seconds: int = 600
     whatsapp_rate_limit_max_requests: int = 6
 
+    # Payment Provider Configuration ("simulated" or "paytm")
+    payment_provider: str = "simulated"
+
+    # Paytm Payment Gateway Sandbox Configuration
+    paytm_mid: str = ""
+    paytm_merchant_key: str = ""
+    paytm_website: str = "WEBSTAGING"
+    paytm_channel_id: str = "WEB"
+    paytm_industry_type_id: str = "Retail"
+    paytm_callback_url: str = "http://localhost:8001/api/v1/payments/paytm/callback"
+    paytm_environment: str = "staging"  # "staging" or "production"
+    paytm_timeout_seconds: float = 15.0
+
     model_config = SettingsConfigDict(
         env_file=(".env", "../.env", "../../.env"),
         env_file_encoding="utf-8",
@@ -99,6 +112,18 @@ class Settings(BaseSettings):
         if isinstance(self.allowed_origins, list):
             return self.allowed_origins
         return [origin.strip() for origin in self.allowed_origins.split(",") if origin.strip()]
+
+    @property
+    def paytm_base_url(self) -> str:
+        """Returns the official base gateway URL according to the configured environment."""
+        if self.paytm_environment.lower() == "production":
+            return "https://securegw.paytm.in"
+        return "https://securegw-stage.paytm.in"
+
+    @property
+    def is_paytm_configured(self) -> bool:
+        """Returns True if minimum required Paytm merchant credentials are provided."""
+        return bool(self.paytm_mid.strip() and self.paytm_merchant_key.strip())
 
 
 settings = Settings()

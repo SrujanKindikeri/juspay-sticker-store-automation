@@ -235,6 +235,7 @@ SAMPLE_PRODUCTS = [
 def seed_store_catalog(db: Session) -> None:
     """
     Seeds initial categories and physical sticker products if not already populated.
+    In development and testing environments, ensures depleted sample products are replenished.
     """
     if db.query(Category).count() == 0:
         for cat_data in SAMPLE_CATEGORIES:
@@ -245,6 +246,16 @@ def seed_store_catalog(db: Session) -> None:
         for prod_data in SAMPLE_PRODUCTS:
             db.add(Product(**prod_data))
         db.commit()
+    elif settings.is_development:
+        # In development/testing environments, replenish sample products if stock is depleted or low
+        replenished = False
+        for prod_data in SAMPLE_PRODUCTS:
+            prod = db.query(Product).filter(Product.id == prod_data["id"]).first()
+            if prod and prod.stock_quantity <= 5:
+                prod.stock_quantity = prod_data["stock_quantity"]
+                replenished = True
+        if replenished:
+            db.commit()
 
 
 def list_products(

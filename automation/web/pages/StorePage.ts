@@ -120,7 +120,12 @@ export class StorePage extends BasePage {
   }
 
   async openCart(): Promise<void> {
-    await this.navigateTo('/cart');
+    if (await this.navCartLink.isVisible()) {
+      await this.navCartLink.click();
+    } else {
+      await this.navigateTo('/cart');
+    }
+    await this.page.waitForURL('**/cart');
     await this.page.waitForLoadState('domcontentloaded');
   }
 

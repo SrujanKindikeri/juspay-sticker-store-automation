@@ -87,6 +87,21 @@ This video demonstration provides an end-to-end walkthrough of the complete Stic
 - **88** backend Pytest integration/security/email/PDF unit & integration tests (`backend/tests/`).
 - **61** Playwright E2E tests in TypeScript (`automation/web/tests/`) verifying browser workflows, PostgreSQL records, and live Mailpit SMTP captures.
 
+### 9. Official Paytm Payment Gateway (Sandbox Staging & Complete Automation)
+- **Dual-Provider Architecture**: Toggle between simulated Juspay gateway (`PAYMENT_PROVIDER=simulated`) and official Paytm Sandbox (`PAYMENT_PROVIDER=paytm`) without altering store logic.
+- **Cryptographic Checksum Security**: Uses official `paytmchecksum` with AES encryption to generate and verify signatures for initiation, callbacks, and status queries. Rejects forged callbacks (`HTTP 400 Bad Request`).
+- **Transaction Initiation API**: Calls Paytm Theia `/theia/api/v1/initiateTransaction` to generate secure, short-lived `txnToken` with server-side amount and order validation.
+- **Authoritative S2S Status Inquiry**: Queries Paytm `/v3/order/status` server-to-server. Never trusts browser-side reporting alone.
+- **Idempotency & Inventory Safety**: Callback replays are safely deduplicated. Confirmed successful payments transition store orders to `PAID` and dispatch PDF email receipts; declined/failed payments transition orders to `PAYMENT_FAILED` and restore reserved inventory.
+- **One-Command Master Test Automation**: Execute the complete backend Pytest and frontend Playwright E2E test pipeline with a single command:
+  ```powershell
+  # Headless Mode (CI / Background):
+  npm run test:paytm-e2e
+
+  # Headed Visible Browser Mode (Watch live with 800ms slow motion):
+  npm run test:paytm-e2e:headed
+  ```
+
 ---
 
 ## Technology Stack
@@ -96,9 +111,10 @@ This video demonstration provides an end-to-end walkthrough of the complete Stic
 | **Frontend** | Next.js, React, TypeScript | Next.js `^14.2.23`, React `^18.3.1`, TypeScript `^5.6.3` |
 | **Backend** | Python, FastAPI, Uvicorn | Python `3.11`, FastAPI `0.110–0.120`, Pydantic `2.x` |
 | **Database** | PostgreSQL + SQLAlchemy | PostgreSQL `16-alpine` (Docker port `5433`), SQLAlchemy `2.0` |
-| **Backend Testing** | Pytest, HTTPX | Pytest `>=8.0.0`, HTTPX `>=0.27.0` |
-| **E2E Automation** | Playwright, TypeScript, `pg` | `@playwright/test ^1.49.0`, Chromium |
-| **Containerization** | Docker Compose | `docker-compose.yml` (`juspay_postgres`) |
+| **Payment Gateways** | JUSPAY Simulator + Paytm Sandbox | Official `paytmchecksum 1.7.0`, `pycryptodome 3.23.0`, S2S Status |
+| **Backend Testing** | Pytest, HTTPX | Pytest `>=8.0.0`, HTTPX `>=0.27.0` (103 tests) |
+| **E2E Automation** | Playwright, TypeScript, `pg` | `@playwright/test ^1.49.0`, Chromium (65 tests) |
+| **Containerization** | Docker Compose | `docker-compose.yml` (`juspay_postgres`, `juspay_mailpit`) |
 
 ---
 
@@ -106,10 +122,11 @@ This video demonstration provides an end-to-end walkthrough of the complete Stic
 
 ```mermaid
 flowchart LR
-    U[Customer / Playwright Browser] -->|HTTP :3001| FE[Next.js 14 Frontend<br/>Stickora Store + JUSPAY UI]
+    U[Customer / Playwright Browser] -->|HTTP :3001| FE[Next.js 14 Frontend<br/>Stickora Store + JUSPAY & Paytm UI]
     FE -->|Cart Persistence| LS[(Browser localStorage)]
     FE -->|REST JSON + CORS :8001| BE[FastAPI Backend<br/>Python + Uvicorn]
     BE -->|SQLAlchemy 2.0| DB[(PostgreSQL 16<br/>Docker :5433 / juspay_db)]
+    BE -->|AES Checksum & S2S Inquiry| PTM[Paytm Gateway Sandbox<br/>securegw-stage.paytm.in]
     PW[Playwright Runner<br/>Chromium + pg] -->|UI & Network| FE
     PW -->|SQL Verification| DB
 ```
@@ -264,6 +281,12 @@ Templates are tracked in [`.env.example`](.env.example) and [`frontend/web/.env.
 | `EMAIL_VERIFICATION_ENABLED` | Backend | Enforces verified email status when creating store orders (`True`) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`, `SMTP_USE_TLS`, `SMTP_USE_SSL` | Backend | SMTP provider settings (defaults to local Mailpit `localhost:1025`; set credentials & TLS for production SMTP) |
 | `SMTP_FROM_EMAIL`, `SMTP_FROM_NAME` | Backend | Sender address and display name for OTP & confirmation receipt emails |
+| `PAYMENT_PROVIDER` | Backend | Active payment provider: `simulated` (default) or `paytm` |
+| `PAYTM_MID`, `PAYTM_MERCHANT_KEY` | Backend | Paytm Sandbox Merchant ID and 16/24/32-byte AES merchant encryption key |
+| `PAYTM_WEBSITE`, `PAYTM_CHANNEL_ID` | Backend | Paytm staging website (`WEBSTAGING`) and channel identifier (`WEB`) |
+| `PAYTM_INDUSTRY_TYPE_ID` | Backend | Industry classification identifier (`Retail`) |
+| `PAYTM_ENVIRONMENT` | Backend | Gateway environment (`STAGE` for sandbox / `PROD` for live) |
+| `PAYTM_CALLBACK_URL` | Backend | S2S callback destination (`http://localhost:8001/api/v1/payments/paytm/callback`) |
 | `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_APP_NAME`, `PORT` | Frontend | Backend base URL (`http://localhost:8001`), app title, Next.js port (`3001`) |
 
 ---
@@ -279,6 +302,12 @@ Summary of implemented endpoints:
 - **Orders & Receipts**: `POST /api/v1/store/orders`, `GET /api/v1/store/orders/{order_id}`, `POST /api/v1/store/orders/{order_id}/retry-receipt`, `GET /api/v1/store/orders/{order_id}/receipt-pdf`
 - **Payments**: `POST /api/v1/payments/initiate`, `POST /api/v1/payments/{transaction_id}/process`, `GET /api/v1/payments/{transaction_id}`, `GET /api/v1/payments`
 - **Payment OTP**: `POST /api/v1/payments/{transaction_id}/send-otp`, `POST /api/v1/payments/{transaction_id}/verify-otp`, `POST /api/v1/payments/{transaction_id}/resend-otp`, `GET /api/v1/payments/{transaction_id}/otp-status`
+- **Paytm Payment Gateway**:
+  - `GET /api/v1/payments/paytm/config` — Public gateway configuration and masked MID
+  - `POST /api/v1/payments/paytm/initiate` — Generates checksum signature and acquires `txnToken`
+  - `POST /api/v1/payments/paytm/callback` — Validates checksum, queries S2S status, and settles order
+  - `GET /api/v1/payments/paytm/status/{order_id}` — Authoritative transaction status inquiry
+  - `POST /api/v1/payments/paytm/reconcile/{order_id}` — Manual/periodic S2S gateway reconciliation
 
 ---
 
@@ -286,13 +315,35 @@ Summary of implemented endpoints:
 
 Refer to [docs/TESTING_GUIDE.md](docs/TESTING_GUIDE.md) for detailed instructions.
 
+### Master One-Command Paytm E2E Automation
+Run the entire end-to-end Paytm testing pipeline with a single command from the project root:
+```powershell
+# Headless Execution (Fast CI runner)
+npm run test:paytm-e2e
+
+# Headed Execution (Watch the complete customer journey in a visible Chromium browser with 800ms slow motion)
+npm run test:paytm-e2e:headed
+```
+This automated runner executes:
+1. Environment configuration check (`.env` existence, credentials detection).
+2. Infrastructure health verification (PostgreSQL, FastAPI backend, Next.js storefront).
+3. Pytest backend test suite (`backend/tests/test_paytm_provider.py` - 9 tests).
+4. Playwright frontend E2E test suite (`automation/web/tests/paytm-payment.spec.ts` - 4 tests) with real-time stage logging and stage screenshots.
+5. Comprehensive report separating deterministic automated mocked tests and live staging tests.
+
+### Test Suite Execution Summary
+
 | Check / Suite | Command | Latest Observed Result |
 | :--- | :--- | :--- |
-| **Backend Pytest** | `cd backend; .\venv\Scripts\pytest.exe -v tests` | **88 passed** (`0 failed`, exit code `0`) |
+| **Headed Visible Paytm E2E** | `npm run test:paytm-e2e:headed` | **ALL PASSED (Visible Window)** (exit code `0`) |
+| **Master Headless Paytm E2E** | `npm run test:paytm-e2e` | **ALL PASSED** (exit code `0`) |
+| **Paytm Pytest Backend Suite** | `backend\venv\Scripts\python.exe -m pytest backend/tests/test_paytm_provider.py -v` | **9 passed** (`0 failed`, exit code `0`) |
+| **Paytm Playwright E2E Suite** | `npm --prefix automation/web test tests/paytm-payment.spec.ts` | **3 passed, 1 skipped** (exit code `0`) |
+| **Complete Backend Pytest** | `cd backend; .\venv\Scripts\pytest.exe -v tests` | **103 passed** (`0 failed`, exit code `0`) |
 | **Frontend TypeScript** | `cd frontend\web; npx tsc --noEmit` | **Passed** (exit code `0`) |
 | **Frontend Production Build** | `cd frontend\web; npm run build` | **Passed** (exit code `0`) |
 | **Playwright TypeScript** | `cd automation\web; npx tsc --noEmit` | **Passed** (exit code `0`) |
-| **Playwright E2E Suite** | `cd automation\web; npx playwright test --reporter=list` | **61 passed** (`0 failed`, exit code `0`) |
+| **Playwright All E2E Suites** | `cd automation\web; npx playwright test --reporter=list` | **64 passed, 1 skipped** (exit code `0`) |
 
 ---
 

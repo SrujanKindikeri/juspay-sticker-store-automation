@@ -6,6 +6,7 @@ import { PaymentMethodId, PaymentMethodOption } from '../types/checkout';
 interface PaymentMethodSelectorProps {
   selectedMethod: PaymentMethodId;
   onSelectMethod: (method: PaymentMethodId) => void;
+  paytmAvailable?: boolean;
 }
 
 const paymentOptions: PaymentMethodOption[] = [
@@ -26,12 +27,38 @@ const paymentOptions: PaymentMethodOption[] = [
     title: 'Net Banking',
     subtitle: 'All major Indian banks supported',
   },
+  {
+    id: 'paytm',
+    title: 'Paytm Gateway Sandbox',
+    subtitle: 'Official Paytm JS Checkout (Staging)',
+    badge: 'Official Sandbox',
+  },
 ];
 
 export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   selectedMethod,
   onSelectMethod,
+  paytmAvailable = true,
 }) => {
+  const visibleOptions = paytmAvailable
+    ? paymentOptions
+    : paymentOptions.filter((opt) => opt.id !== 'paytm');
+
+  const getMethodLabel = (id: PaymentMethodId) => {
+    switch (id) {
+      case 'card':
+        return 'Credit / Debit Card';
+      case 'upi':
+        return 'UPI';
+      case 'netbanking':
+        return 'Net Banking';
+      case 'paytm':
+        return 'Paytm Gateway Sandbox';
+      default:
+        return id;
+    }
+  };
+
   return (
     <div className="payment-methods-wrapper" data-testid="payment-methods">
       <div className="section-title-row">
@@ -41,12 +68,12 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
           data-testid="selected-payment-method"
           data-selected={selectedMethod}
         >
-          Active: {selectedMethod === 'card' ? 'Credit / Debit Card' : selectedMethod === 'upi' ? 'UPI' : 'Net Banking'}
+          Active: {getMethodLabel(selectedMethod)}
         </span>
       </div>
 
       <div className="methods-list" role="radiogroup" aria-label="Payment Methods">
-        {paymentOptions.map((opt) => {
+        {visibleOptions.map((opt) => {
           const isSelected = selectedMethod === opt.id;
           const testId = `${opt.id}-method`;
 
@@ -114,6 +141,21 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
                     <line x1="12" y1="14" x2="12" y2="17" />
                     <line x1="16" y1="14" x2="16" y2="17" />
                   </svg>
+                )}
+                {opt.id === 'paytm' && (
+                  <div
+                    style={{
+                      background: '#002970',
+                      color: '#00baf2',
+                      fontSize: '11px',
+                      fontWeight: 900,
+                      padding: '3px 5px',
+                      borderRadius: '4px',
+                      lineHeight: 1,
+                    }}
+                  >
+                    PTM
+                  </div>
                 )}
               </div>
 

@@ -86,6 +86,35 @@ async def lifespan(app: FastAPI):
                 SET otp_hash = NULL 
                 WHERE status IN ('SUCCESS', 'DECLINED', 'FAILED') AND otp_hash IS NOT NULL;
             """))
+            # Paytm Gateway schema extension
+            conn.execute(text("""
+                ALTER TABLE payment_transactions 
+                ADD COLUMN IF NOT EXISTS provider VARCHAR(30) DEFAULT 'simulated';
+            """))
+            conn.execute(text("""
+                CREATE INDEX IF NOT EXISTS ix_payment_transactions_provider 
+                ON payment_transactions (provider);
+            """))
+            conn.execute(text("""
+                ALTER TABLE payment_transactions 
+                ADD COLUMN IF NOT EXISTS gateway_order_id VARCHAR(100);
+            """))
+            conn.execute(text("""
+                ALTER TABLE payment_transactions 
+                ADD COLUMN IF NOT EXISTS gateway_transaction_id VARCHAR(100);
+            """))
+            conn.execute(text("""
+                ALTER TABLE payment_transactions 
+                ADD COLUMN IF NOT EXISTS gateway_response_code VARCHAR(50);
+            """))
+            conn.execute(text("""
+                ALTER TABLE payment_transactions 
+                ADD COLUMN IF NOT EXISTS gateway_response_msg VARCHAR(255);
+            """))
+            conn.execute(text("""
+                ALTER TABLE payment_transactions 
+                ADD COLUMN IF NOT EXISTS raw_callback_payload TEXT;
+            """))
             # Phase 8 schema migration for store_orders
             conn.execute(text("""
                 ALTER TABLE store_orders 

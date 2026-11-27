@@ -1,0 +1,25 @@
+{
+  "name": "stickora-juspay-payment-automation",
+  "version": "1.0.0",
+  "description": "Stickora Store & Paytm Payment Gateway Automation Testing Suite",
+  "type": "module",
+  "scripts": {
+    "test:paytm-e2e": "node scripts/run-paytm-e2e.mjs",
+    "test:paytm-e2e:headed": "node scripts/run-paytm-e2e.mjs --headed",
+    "test:paytm-e2e:headless": "node scripts/run-paytm-e2e.mjs --headless",
+    "test:paytm-e2e:current-browser": "node scripts/run-paytm-current-browser.mjs",
+    "test:paytm:backend": "backend\\venv\\Scripts\\python.exe -m pytest backend/tests/test_paytm_provider.py -v",
+    "test:paytm:frontend": "npm --prefix automation/web test tests/paytm-payment.spec.ts"
+  },
+  "keywords": [
+    "paytm",
+    "sandbox",
+    "juspay",
+    "fastapi",
+    "playwright",
+    "pytest",
+    "e2e-testing"
+  ],
+  "author": "Stickora Engineering Team",
+  "license": "ISC"
+}

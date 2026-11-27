@@ -1,4 +1,27 @@
-export type PaymentMethodId = 'card' | 'upi' | 'netbanking';
+export type PaymentMethodId = 'card' | 'upi' | 'netbanking' | 'paytm';
+
+export interface PaytmConfig {
+  provider: 'simulated' | 'paytm';
+  enabled: boolean;
+  environment: string;
+  mid_masked: string | null;
+  checkout_js_url: string;
+  is_paytm_configured?: boolean;
+  is_live?: boolean;
+}
+
+export interface PaytmInitiateResponse {
+  transaction_id: string;
+  payment_reference: string;
+  order_id: string;
+  amount: number;
+  currency: string;
+  txn_token: string;
+  mid: string;
+  callback_url: string;
+  checkout_js_url: string;
+  status: string;
+}
 
 export interface PaymentMethodOption {
   id: PaymentMethodId;

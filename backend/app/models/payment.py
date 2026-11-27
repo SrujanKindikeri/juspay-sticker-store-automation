@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime, Text
 from app.database.base import Base
 
 
@@ -34,6 +34,14 @@ class PaymentTransaction(Base):
 
     # Idempotency key for duplicate payment prevention
     idempotency_key = Column(String(128), index=True, nullable=True)
+
+    # Multi-provider & Gateway reconciliation fields
+    provider = Column(String(30), default="simulated", index=True, nullable=False)  # simulated, paytm
+    gateway_order_id = Column(String(100), nullable=True)
+    gateway_transaction_id = Column(String(100), nullable=True)
+    gateway_response_code = Column(String(50), nullable=True)
+    gateway_response_msg = Column(String(255), nullable=True)
+    raw_callback_payload = Column(Text, nullable=True)
 
     # Lifecycle timestamps
     created_at = Column(DateTime, default=datetime.utcnow, index=True, nullable=False)
