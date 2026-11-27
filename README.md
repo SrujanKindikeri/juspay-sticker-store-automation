@@ -23,7 +23,7 @@ A Full-Stack Physical Sticker E-Commerce Platform (**Stickora — Premium Vinyl 
 
 ## Project Demo Video
 
-[▶ Watch Stickora Store – Project Demo](https://drive.google.com/file/d/1-heiX4KSLKQIY4bq1HWT0XeernMZ74Ab/view?usp=drive_link)
+[▶ Watch Stickora Store – Project Demo]([https://drive.google.com/file/d/1-heiX4KSLKQIY4bq1HWT0XeernMZ74Ab/view?usp=drive_link](https://drive.google.com/file/d/1-heiX4KSLKQIY4bq1HWT0XeernMZ74Ab/view))
 
 This video demonstration provides an end-to-end walkthrough of the complete Stickora storefront customer workflow and JUSPAY payment automation lifecycle, including product catalogue browsing, shopping cart management, delivery checkout, OTP verification, and simulated payment processing.
 
